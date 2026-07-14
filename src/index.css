@@ -1,0 +1,552 @@
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --border: #e3e6ea;
+  --text: #1c2024;
+  --muted: #6b7280;
+  --accent: #2f6feb;
+  --accent-strong: #2559c4;
+  --danger-bg: #fdeceb;
+  --danger-text: #b3261e;
+
+  font-family: 'Pretendard', 'Malgun Gothic', system-ui, -apple-system, sans-serif;
+  color: var(--text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+/* --- 로그인 --- */
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 36px 32px 28px;
+  box-shadow: 0 8px 28px rgb(20 25 35 / 6%);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* EXPRISM 워드마크. 영문 대문자 + 자간을 벌려 로고처럼 읽히게 한다. */
+.wordmark {
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.login-head h1.wordmark {
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+
+.login-head .slogan {
+  margin: 0 0 10px;
+  color: var(--accent);
+  font-size: 12px;
+  font-style: italic;
+  letter-spacing: 0.01em;
+}
+
+.login-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.field input {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fbfcfd;
+  outline: none;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+
+.field input:focus {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgb(47 111 235 / 12%);
+}
+
+.btn-primary {
+  height: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.alert {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  font-size: 13px;
+}
+
+/* 성공·안내 (예: "변경된 비밀번호로 로그인하세요") */
+.notice {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #e7f5ec;
+  color: #1a7f42;
+  font-size: 13px;
+}
+
+.field-error {
+  color: var(--danger-text);
+  font-size: 12px;
+}
+
+.hint {
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* --- 로그인 후 --- */
+.boot {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
+.topbar {
+  height: 56px;
+  padding: 0 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.brand .wordmark {
+  font-size: 16px;
+}
+
+.brand-sub {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.who {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.btn-ghost {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-ghost:hover {
+  background: #f3f4f6;
+}
+
+.content {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 28px 24px;
+}
+
+.page-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.page-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.count,
+.muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* 표가 창보다 넓어지면 표 안에서만 가로 스크롤한다. 페이지 전체는 밀리지 않는다. */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+/* 모든 셀을 한 줄로 고정한다. 자동 레이아웃에서 열의 최소폭이 곧 "글자가 한 줄로 들어가는 폭"이 되므로,
+   창이 좁아져도 "연락처" 가 세로로 쪼개지거나 버튼이 층층이 쌓이지 않는다.
+   대신 표가 컨테이너보다 넓어지는데, 그건 .table-wrap 이 가로 스크롤로 받는다. */
+.table th,
+.table td {
+  white-space: nowrap;
+}
+
+.table th {
+  text-align: left;
+  padding: 11px 14px;
+  background: #fafbfc;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f1f2f4;
+}
+
+/* 넓은 화면에서 남는 공간은 이 열이 흡수한다.
+   (auto 레이아웃에서 width:auto 인 열들은 최소폭만 쓰고, 이 열만 늘어난다) */
+.col-grow {
+  width: auto;
+  min-width: 12rem;
+}
+
+.table tr:last-child td {
+  border-bottom: 0;
+}
+
+.strong {
+  font-weight: 600;
+}
+
+.mono {
+  font-family: ui-monospace, 'Consolas', monospace;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #eef1f4;
+  color: #4b5563;
+}
+
+.badge-active {
+  background: #e7f5ec;
+  color: #1a7f42;
+}
+
+.badge-suspended {
+  background: #fdeceb;
+  color: var(--danger-text);
+}
+
+.badge-pending {
+  background: #fef6e5;
+  color: #9a6700;
+}
+
+.badge-locked {
+  background: #fef6e5;
+  color: #9a6700;
+}
+
+.badge-disabled {
+  background: #eef1f4;
+  color: #6b7280;
+}
+
+/* --- 내비게이션 --- */
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.nav {
+  display: flex;
+  gap: 4px;
+}
+
+.nav a {
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.nav a:hover {
+  background: #f3f4f6;
+}
+
+.nav a.nav-on {
+  background: #eef3fd;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* --- 목록 헤더 --- */
+.page-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.btn-sm {
+  height: 30px;
+  padding: 0 10px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+
+.btn-ghost + .btn-ghost {
+  margin-left: 4px;
+}
+
+.btn-danger {
+  color: var(--danger-text);
+  border-color: #f3d3d1;
+}
+
+.btn-danger:hover {
+  background: var(--danger-bg);
+}
+
+.right {
+  text-align: right;
+}
+
+.muted-cell {
+  color: var(--muted);
+}
+
+/* 삭제된 행은 흐리게. 클릭할 것이 없다는 신호도 겸한다. */
+.row-deleted {
+  opacity: 0.55;
+}
+
+.tag-self {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #eef3fd;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* --- 모달 --- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(17 24 39 / 45%);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  z-index: 10;
+}
+
+.modal {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 16px 48px rgb(15 23 42 / 24%);
+}
+
+.modal h3 {
+  margin: 0 0 18px;
+  font-size: 17px;
+}
+
+.modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal select {
+  height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fbfcfd;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.dialog-actions .btn-primary,
+.dialog-actions .btn-ghost {
+  height: 38px;
+  padding: 0 16px;
+}
+
+.hint.left {
+  text-align: left;
+}
+
+.issued {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.issued .mono {
+  font-size: 20px;
+  color: var(--accent);
+}
+
+.confirm-text {
+  margin: 0 0 4px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.btn-danger-solid {
+  background: var(--danger-text);
+}
+
+.btn-danger-solid:hover:not(:disabled) {
+  background: #8f1d17;
+}
+
+/* --- 행 상호작용 --- */
+.row-clickable {
+  cursor: default;
+}
+
+.row-clickable:hover {
+  background: #f7f9fc;
+}
+
+/* 더블클릭으로 수정하는 화면이라, 드래그 선택되면 글자만 파랗게 잡힌다. */
+.row-clickable td {
+  user-select: none;
+}
+
+.table-hint {
+  margin-top: 10px;
+}
+
+/* --- 우클릭 메뉴 --- */
+.context-menu {
+  position: fixed;
+  z-index: 20;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  min-width: 148px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgb(15 23 42 / 16%);
+}
+
+.context-menu li {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.context-menu li:hover {
+  background: #f3f4f6;
+}
+
+.context-menu li.danger {
+  color: var(--danger-text);
+}
+
+.context-menu li.danger:hover {
+  background: var(--danger-bg);
+}
