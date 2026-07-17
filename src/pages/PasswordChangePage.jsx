@@ -18,7 +18,7 @@ export default function PasswordChangePage() {
   if (loading) return <div className="boot">확인 중…</div>
   if (!user) return <Navigate to="/login" replace />
   // 이미 바꾼 사람이 주소로 직접 들어온 경우
-  if (!user.mustChangePassword) return <Navigate to="/admins" replace />
+  if (!user.mustChangePassword) return <Navigate to="/dashboard" replace />
 
   // 확인란까지 입력했을 때만 불일치를 알린다. 타이핑 중에 빨간 글씨를 띄우면 성가시다.
   const mismatch = confirmPassword.length > 0 && newPassword !== confirmPassword
