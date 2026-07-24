@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import Toast from '../components/Toast'
 import { menuApi } from '../api/client'
 import Shell from '../components/Shell'
 import { refreshMenus } from '../components/useMenus'
@@ -163,7 +164,7 @@ export default function MenusPage() {
         </div>
       </div>
 
-      {error && <p className="alert">{error}</p>}
+      <Toast message={error} onClose={() => setError('')} />
 
       {loading ? (
         <p className="muted">불러오는 중…</p>
@@ -347,7 +348,7 @@ function MenuDialog({ dialog, topLevel, onClose, onSaved, onError }) {
   return (
     <Modal title={mode === 'create' ? '메뉴 추가' : `${item.name} 수정`} onClose={onClose}>
       <form onSubmit={handleSubmit}>
-        {error && <p className="alert">{error}</p>}
+        <Toast message={error} onClose={() => setError('')} />
 
         <label className="field">
           <span>위치</span>

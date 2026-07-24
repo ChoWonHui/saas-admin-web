@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Toast from '../components/Toast'
 import { adminApi, codeApi, orgApi } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import Shell from '../components/Shell'
@@ -210,7 +211,7 @@ export default function AdminsPage() {
         <span className="count">{loading ? '' : `${admins.filter((a) => !a.deleted).length}명`}</span>
       </div>
 
-      {error && <p className="alert">{error}</p>}
+      <Toast message={error} onClose={() => setError('')} />
 
       {loading ? (
         <p className="muted">불러오는 중…</p>
@@ -635,7 +636,7 @@ function OrgDialog({ dialog, onClose, onSaved, onError, deptCodes }) {
   return (
     <Modal title={mode === 'createOrg' ? (parentId ? '하위 조직 추가' : '최상위 조직 추가') : `${org.name} 수정`} onClose={onClose}>
       <form onSubmit={handleSubmit}>
-        {error && <p className="alert">{error}</p>}
+        <Toast message={error} onClose={() => setError('')} />
         <label className="field">
           <span>부서코드 (공통코드 · 부서에서 선택)</span>
           <select value={orgCode} onChange={(e) => pickCode(e.target.value)} required autoFocus>
@@ -852,7 +853,7 @@ function AdminDialog({ dialog, onClose, onSaved, onError }) {
   return (
     <Modal title={title} onClose={onClose}>
       <form onSubmit={handleSubmit} className="emp-form">
-        {error && <p className="alert">{error}</p>}
+        <Toast message={error} onClose={() => setError('')} />
 
         {/* 사번은 수정 시 바뀌지 않는 식별자 — 읽기 전용으로 위에 보여준다 */}
         {mode === 'edit' && (

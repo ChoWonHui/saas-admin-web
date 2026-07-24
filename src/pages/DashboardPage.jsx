@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Toast from '../components/Toast'
 import { useNavigate } from 'react-router-dom'
 import { adminApi, tenantApi } from '../api/client'
 import Shell from '../components/Shell'
@@ -48,7 +49,7 @@ export default function DashboardPage() {
         <h2>대시보드</h2>
       </div>
 
-      {error && <p className="alert">{error}</p>}
+      <Toast message={error} onClose={() => setError('')} />
 
       <div className="stat-grid">
         {cards.map((card) => (

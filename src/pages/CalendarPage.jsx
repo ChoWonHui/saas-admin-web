@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import Toast from '../components/Toast'
 import { calendarApi } from '../api/client'
 import Shell from '../components/Shell'
 
@@ -148,7 +149,7 @@ export default function CalendarPage() {
         <h2>달력</h2>
       </div>
 
-      {error && <p className="alert">{error}</p>}
+      <Toast message={error} onClose={() => setError('')} />
 
       <div className="cal-toolbar">
         <div className="cal-nav">
@@ -600,7 +601,7 @@ function EventDialog({ dialog, writable, defaultDate, onClose, onSaved, onError 
   return (
     <Modal title={mode === 'create' ? '일정 추가' : editable ? '일정 수정' : '일정'} onClose={onClose}>
       <form onSubmit={handleSubmit}>
-        {error && <p className="alert">{error}</p>}
+        <Toast message={error} onClose={() => setError('')} />
 
         {/* 범위: 생성 시엔 쓸 수 있는 범위만 선택. 수정 시엔 배지로 표시(변경 불가). */}
         {mode === 'create' ? (

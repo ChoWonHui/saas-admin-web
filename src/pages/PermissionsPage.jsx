@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import Toast from '../components/Toast'
 import { calendarPermApi, codeApi, menuApi, orgApi, permissionApi } from '../api/client'
 import Shell from '../components/Shell'
 
@@ -181,7 +182,7 @@ export default function PermissionsPage() {
         </div>
       </div>
 
-      {error && <p className="alert">{error}</p>}
+      <Toast message={error} onClose={() => setError('')} />
 
       {loading ? (
         <p className="muted">불러오는 중…</p>

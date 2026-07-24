@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import Toast from '../components/Toast'
 import { codeApi } from '../api/client'
 import Shell from '../components/Shell'
 
@@ -97,7 +98,7 @@ export default function CodesPage() {
         <span className="count">{loading ? '' : `${groups.length}개 대분류`}</span>
       </div>
 
-      {error && <p className="alert">{error}</p>}
+      <Toast message={error} onClose={() => setError('')} />
 
       {loading ? (
         <p className="muted">불러오는 중…</p>
@@ -367,7 +368,7 @@ function CodeDialog({ dialog, onClose, onSaved, onError }) {
   return (
     <Modal title={titles[mode]} onClose={onClose}>
       <form onSubmit={handleSubmit}>
-        {error && <p className="alert">{error}</p>}
+        <Toast message={error} onClose={() => setError('')} />
 
         {mode === 'createGroup' && (
           <label className="field">

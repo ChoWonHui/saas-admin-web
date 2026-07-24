@@ -216,6 +216,11 @@ export const fileApi = {
     }
     return parse(response) // { url }
   },
+  // 이미지 검색(Pixabay). [{ thumb, url }]
+  searchImages: (q, page = 1) =>
+    api(`/api/platform-admin/image-search?${new URLSearchParams({ q, page })}`),
+  // 검색으로 고른 외부 이미지 URL 을 S3 에 저장 → { url }
+  saveFromUrl: (url) => api('/api/platform-admin/files/from-url', { method: 'POST', body: { url } }),
 }
 
 // 사내 공지사항. content 는 에디터 HTML.
@@ -238,12 +243,92 @@ export const noticeApi = {
     api(`/api/platform-admin/notices/comments/${commentId}`, { method: 'DELETE' }),
 }
 
+// 업체 문의 관리(관리자). 전체 업체의 문의를 보고 답변한다.
+export const inquiryApi = {
+  list: (status = 'ALL') => api(`/api/platform-admin/inquiries?status=${encodeURIComponent(status)}`),
+  get: (id) => api(`/api/platform-admin/inquiries/${id}`),
+  reply: (id, body) => api(`/api/platform-admin/inquiries/${id}/replies`, { method: 'POST', body }),
+  close: (id) => api(`/api/platform-admin/inquiries/${id}/close`, { method: 'POST' }),
+  remove: (id) => api(`/api/platform-admin/inquiries/${id}`, { method: 'DELETE' }),
+  // 답변 이미지 업로드는 기존 관리자 업로드 엔드포인트(fileApi.uploadImage)를 그대로 쓴다.
+}
+
+// 업체 공지사항(관리자 등록/관리). 상단 고정 + 팝업(기간). 본문은 에디터 HTML.
+export const tenantNoticeApi = {
+  list: ({ keyword = '', page = 0, size = 10 } = {}) =>
+    api(`/api/platform-admin/tenant-notices?${new URLSearchParams({ keyword, page, size })}`),
+  get: (id) => api(`/api/platform-admin/tenant-notices/${id}`),
+  create: (body) => api('/api/platform-admin/tenant-notices', { method: 'POST', body }),
+  update: (id, body) => api(`/api/platform-admin/tenant-notices/${id}`, { method: 'PATCH', body }),
+  remove: (id) => api(`/api/platform-admin/tenant-notices/${id}`, { method: 'DELETE' }),
+}
+
+// 업체(테넌트) 관리. 목록은 Spring Page( { content, totalElements, ... } ).
+// 삭제는 소프트삭제(삭제여부='Y') — 기본 목록에서 숨겨지고 복구할 수 있다.
+// 지점 메뉴판. 모든 응답은 갱신된 전체 메뉴 트리({ categories })다.
+// (관리자 콘솔 메뉴용 menuApi 와 다른, 업체 지점 메뉴판 API)
+export const tenantMenuApi = {
+  base: (tid, bid) => `/api/platform-admin/tenants/${tid}/branches/${bid}/menu`,
+  get: (tid, bid) => api(tenantMenuApi.base(tid, bid)),
+  addCategory: (tid, bid, name) => api(`${tenantMenuApi.base(tid, bid)}/categories`, { method: 'POST', body: { name } }),
+  renameCategory: (tid, bid, cid, name) =>
+    api(`${tenantMenuApi.base(tid, bid)}/categories/${cid}`, { method: 'PATCH', body: { name } }),
+  deleteCategory: (tid, bid, cid) => api(`${tenantMenuApi.base(tid, bid)}/categories/${cid}`, { method: 'DELETE' }),
+  addItem: (tid, bid, cid, body) => api(`${tenantMenuApi.base(tid, bid)}/categories/${cid}/items`, { method: 'POST', body }),
+  updateItem: (tid, bid, iid, body) => api(`${tenantMenuApi.base(tid, bid)}/items/${iid}`, { method: 'PATCH', body }),
+  deleteItem: (tid, bid, iid) => api(`${tenantMenuApi.base(tid, bid)}/items/${iid}`, { method: 'DELETE' }),
+  copy: (tid, bid, fromBranchId) => api(`${tenantMenuApi.base(tid, bid)}/copy`, { method: 'POST', body: { fromBranchId } }),
+}
+
+// 업체 직원(로그인 계정). 역할 2=대표 3=매니저 4=직원.
+export const staffApi = {
+  base: (tid) => `/api/platform-admin/tenants/${tid}/staff`,
+  list: (tid) => api(staffApi.base(tid)),
+  create: (tid, body) => api(staffApi.base(tid), { method: 'POST', body }),
+  update: (tid, staffId, body) => api(`${staffApi.base(tid)}/${staffId}`, { method: 'PATCH', body }),
+  resetPassword: (tid, staffId, newPassword) =>
+    api(`${staffApi.base(tid)}/${staffId}/password`, { method: 'POST', body: { newPassword } }),
+  remove: (tid, staffId) => api(`${staffApi.base(tid)}/${staffId}`, { method: 'DELETE' }),
+}
+
 export const tenantApi = {
-  // 이 엔드포인트는 배열이 아니라 Spring 의 Page 를 준다.
-  // { content: [...], totalElements, totalPages, number, ... }
-  list: ({ status, page = 0, size = 20 } = {}) => {
-    const params = new URLSearchParams({ page, size })
+  list: ({ status, includeDeleted = false, page = 0, size = 20 } = {}) => {
+    const params = new URLSearchParams({ page, size, includeDeleted })
     if (status) params.set('status', status)
     return api(`/api/platform-admin/tenants?${params}`)
+  },
+  get: (id) => api(`/api/platform-admin/tenants/${id}`),
+  plans: () => api('/api/platform-admin/tenants/plans'),
+  // 업체 정보만 등록(대표 계정 없이).
+  create: (body) => api('/api/platform-admin/tenants', { method: 'POST', body }),
+  update: (id, body) => api(`/api/platform-admin/tenants/${id}`, { method: 'PATCH', body }),
+  // 소프트 삭제 / 복구
+  remove: (id) => api(`/api/platform-admin/tenants/${id}`, { method: 'DELETE' }),
+  restore: (id) => api(`/api/platform-admin/tenants/${id}/restore`, { method: 'POST' }),
+  // 상태 전이(개설/중지) — 기존 기능 유지.
+  activate: (id) => api(`/api/platform-admin/tenants/${id}/activate`, { method: 'POST' }),
+  suspend: (id, reason) => api(`/api/platform-admin/tenants/${id}/suspend`, { method: 'POST', body: { reason } }),
+  // 지점(호점) — 한 업체 아래 1호점·2호점… 호점 번호는 서버가 자동 채번.
+  branches: (id) => api(`/api/platform-admin/tenants/${id}/branches`),
+  addBranch: (id, body) => api(`/api/platform-admin/tenants/${id}/branches`, { method: 'POST', body }),
+  updateBranch: (id, branchId, body) =>
+    api(`/api/platform-admin/tenants/${id}/branches/${branchId}`, { method: 'PATCH', body }),
+  removeBranch: (id, branchId) =>
+    api(`/api/platform-admin/tenants/${id}/branches/${branchId}`, { method: 'DELETE' }),
+  // 영업장 테이블 배치 — { takeoutOnly, floorCount, tables:[{floorNo,label,seats,kind,x,y,width,height}] }
+  layout: (id, branchId) => api(`/api/platform-admin/tenants/${id}/branches/${branchId}/layout`),
+  saveLayout: (id, branchId, body) =>
+    api(`/api/platform-admin/tenants/${id}/branches/${branchId}/layout`, { method: 'PUT', body }),
+  // 테이블 주문 QR PNG. 이미지 엔드포인트도 인증이 필요해 <img> 로 직접 못 부른다 →
+  // 토큰 붙여 fetch 후 blob → object URL 로 돌려준다. (다 쓰면 URL.revokeObjectURL 로 해제)
+  async tableQr(id, branchId, tableId) {
+    const send = () =>
+      fetch(`/api/platform-admin/tenants/${id}/branches/${branchId}/tables/${tableId}/qr`, {
+        headers: tokenStore.access ? { Authorization: `Bearer ${tokenStore.access}` } : {},
+      })
+    let res = await send()
+    if (res.status === 401 && tokenStore.refresh) { if (await refreshAccessToken()) res = await send() }
+    if (!res.ok) { if (res.status === 401) tokenStore.clear(); throw new ApiError(res.status, await parse(res)) }
+    return URL.createObjectURL(await res.blob())
   },
 }
