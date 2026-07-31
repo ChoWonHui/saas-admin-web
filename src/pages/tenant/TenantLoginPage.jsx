@@ -6,23 +6,23 @@ import { useTenantAuth } from '../../auth/TenantAuthContext'
 function StorefrontMark() {
   return (
     <svg className="owner-illus" viewBox="0 0 120 96" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M14 34h92l-8-16H22l-8 16Z" fill="#f97316" />
+      <path d="M14 34h92l-8-16H22l-8 16Z" fill="#5b48e6" />
       <path d="M14 34h92l-8-16H22l-8 16Z" fill="url(#awning)" />
       <g fill="#fff" opacity=".85">
         <path d="M22 34l4-16h10l-3 16z" />
         <path d="M50 34l1.5-16h10l-1 16z" />
         <path d="M78 34l-1.5-16h10l3 16z" />
       </g>
-      <rect x="20" y="34" width="80" height="52" rx="4" fill="#fff" stroke="#fed7aa" strokeWidth="2" />
-      <rect x="52" y="52" width="16" height="34" rx="2" fill="#fdba74" />
-      <circle cx="64" cy="70" r="1.6" fill="#c2410c" />
-      <rect x="30" y="52" width="16" height="14" rx="2" fill="#ffedd5" stroke="#fdba74" strokeWidth="1.5" />
-      <rect x="74" y="52" width="16" height="14" rx="2" fill="#ffedd5" stroke="#fdba74" strokeWidth="1.5" />
+      <rect x="20" y="34" width="80" height="52" rx="4" fill="#fff" stroke="#d9d5f5" strokeWidth="2" />
+      <rect x="52" y="52" width="16" height="34" rx="2" fill="#a99ff0" />
+      <circle cx="64" cy="70" r="1.6" fill="#3525cd" />
+      <rect x="30" y="52" width="16" height="14" rx="2" fill="#ece9ff" stroke="#a99ff0" strokeWidth="1.5" />
+      <rect x="74" y="52" width="16" height="14" rx="2" fill="#ece9ff" stroke="#a99ff0" strokeWidth="1.5" />
       <circle cx="60" cy="27" r="3" fill="#fff" opacity=".9" />
       <defs>
         <linearGradient id="awning" x1="14" y1="18" x2="106" y2="34" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#fb923c" />
-          <stop offset="1" stopColor="#ea580c" />
+          <stop stopColor="#5b48e6" />
+          <stop offset="1" stopColor="#3525cd" />
         </linearGradient>
       </defs>
     </svg>

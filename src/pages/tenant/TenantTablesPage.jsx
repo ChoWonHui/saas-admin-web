@@ -25,6 +25,7 @@ export default function TenantTablesPage() {
   const loadLayout = useCallback(() => tenantTableApi.layout(), [])
   const onSave = useCallback((body) => tenantTableApi.saveLayout(body), [])
   const loadTableQr = useCallback((table) => tenantTableApi.qr(table.tableId), [])
+  const loadTakeoutQr = useCallback(() => tenantTableApi.takeoutQr(), [])
 
   async function handleSave() {
     if (!editorRef.current) return
@@ -96,6 +97,7 @@ export default function TenantTablesPage() {
               loadLayout={loadLayout}
               onSave={onSave}
               loadTableQr={loadTableQr}
+              loadTakeoutQr={loadTakeoutQr}
               onError={setError}
               onSaved={reloadInfo}
             />

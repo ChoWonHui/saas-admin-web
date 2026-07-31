@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Toast from '../components/Toast'
 import { codeApi } from '../api/client'
 import Shell from '../components/Shell'
@@ -18,6 +18,7 @@ export default function CodesPage() {
   const [menu, setMenu] = useState(null) // 우클릭 { x, y, kind: 'group'|'code', group, code }
   const [dragId, setDragId] = useState(null) // 드래그 중인 소분류 id
   const [dropHint, setDropHint] = useState(null) // { id, zone: 'before'|'after' }
+  const tbodyRef = useRef(null)
 
   const load = useCallback(async (keepSelected) => {
     setLoading(true)
@@ -64,31 +65,50 @@ export default function CodesPage() {
     await load(keepSelected)
   }
 
-  // --- 소분류 드래그앤드랍 순서 변경 ---
-  function onDragOverCode(event, target) {
-    if (dragId == null || dragId === target.id) return
-    event.preventDefault()
-    const rect = event.currentTarget.getBoundingClientRect()
-    const zone = (event.clientY - rect.top) / rect.height < 0.5 ? 'before' : 'after'
-    setDropHint({ id: target.id, zone })
-  }
+  // --- 소분류 순서 변경 (포인터 기반 — 네이티브 HTML5 DnD 대신. 마우스·터치·모든 브라우저) ---
+  function startPointerDrag(e, code) {
+    if (e.button != null && e.button !== 0) return
+    e.preventDefault()
+    e.stopPropagation()
+    const draggingId = code.id
+    const groupCode = currentGroup.groupCode
+    const snapshot = currentGroup.codes
+    setDragId(draggingId)
+    let position = null
 
-  async function onDropCode(event, target) {
-    event.preventDefault()
-    const hint = dropHint
-    setDropHint(null)
-    if (dragId == null || !hint || hint.id !== target.id) return
-    const codes = currentGroup.codes
-    const siblings = codes.filter((c) => c.id !== dragId)
-    const idx = siblings.findIndex((c) => c.id === target.id)
-    if (idx < 0) return
-    const position = hint.zone === 'before' ? idx : idx + 1
-    try {
-      await codeApi.moveCode(dragId, position)
-      await load(currentGroup.groupCode)
-    } catch (e) {
-      setError(e.message)
+    const move = (ev) => {
+      const rowEls = tbodyRef.current ? [...tbodyRef.current.querySelectorAll('tr[data-id]')] : []
+      let matched = false
+      for (const el of rowEls) {
+        const rc = el.getBoundingClientRect()
+        if (ev.clientY >= rc.top && ev.clientY <= rc.bottom) {
+          const id = Number(el.getAttribute('data-id'))
+          if (id !== draggingId) {
+            const zone = (ev.clientY - rc.top) / rc.height < 0.5 ? 'before' : 'after'
+            const idx = snapshot.filter((c) => c.id !== draggingId).findIndex((c) => c.id === id)
+            if (idx >= 0) { position = zone === 'before' ? idx : idx + 1; setDropHint({ id, zone }) }
+          }
+          matched = true
+          break
+        }
+      }
+      if (!matched) { position = null; setDropHint(null) }
     }
+
+    const up = async () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      document.body.classList.remove('menu-dragging')
+      setDragId(null)
+      setDropHint(null)
+      if (position == null) return
+      try { await codeApi.moveCode(draggingId, position); await load(groupCode) }
+      catch (err) { setError(err.message) }
+    }
+
+    document.body.classList.add('menu-dragging')
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
   }
 
   return (
@@ -162,25 +182,16 @@ export default function CodesPage() {
                         <th className="col-grow">순서</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody ref={tbodyRef}>
                       {currentGroup.codes.map((code) => (
                         <tr
                           key={code.id}
+                          data-id={code.id}
                           className={[
                             'row-clickable',
                             dragId === code.id ? 'dragging' : '',
                             dropHint?.id === code.id ? `drop-${dropHint.zone}` : '',
                           ].filter(Boolean).join(' ')}
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.effectAllowed = 'move'
-                            e.dataTransfer.setData('text/plain', String(code.id))
-                            setDragId(code.id)
-                          }}
-                          onDragEnd={() => { setDragId(null); setDropHint(null) }}
-                          onDragOver={(e) => onDragOverCode(e, code)}
-                          onDragLeave={() => setDropHint((h) => (h?.id === code.id ? null : h))}
-                          onDrop={(e) => onDropCode(e, code)}
                           onDoubleClick={() => setDialog({ mode: 'editCode', group: currentGroup, code })}
                           onContextMenu={(e) => {
                             e.preventDefault()
@@ -188,7 +199,7 @@ export default function CodesPage() {
                           }}
                         >
                           <td className="strong">
-                            <span className="drag-grip">⠿</span>
+                            <span className="drag-grip" title="끌어서 순서 변경" onPointerDown={(e) => startPointerDrag(e, code)}>⠿</span>
                             {code.name}
                           </td>
                           <td className="mono muted-cell">{code.code}</td>

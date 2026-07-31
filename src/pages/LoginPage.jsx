@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
+import { adminPath } from '../adminBase'
 import { useAuth } from '../auth/AuthContext'
 
 export default function LoginPage() {
@@ -11,7 +12,7 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  if (user) return <Navigate to={user.mustChangePassword ? '/password' : '/dashboard'} replace />
+  if (user) return <Navigate to={adminPath(user.mustChangePassword ? '/password' : '/dashboard')} replace />
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -20,7 +21,7 @@ export default function LoginPage() {
     try {
       const me = await login(empNo.trim(), password)
       // 초기 비밀번호로 들어온 사람은 곧장 비밀번호 변경 화면으로 보낸다.
-      navigate(me.mustChangePassword ? '/password' : '/dashboard', { replace: true })
+      navigate(adminPath(me.mustChangePassword ? '/password' : '/dashboard'), { replace: true })
     } catch (e) {
       // 백엔드가 INVALID_ADMIN_CREDENTIALS / ACCOUNT_LOCKED / ACCOUNT_DISABLED 를 구분해 내려준다.
       setError(e.message || '로그인에 실패했습니다.')

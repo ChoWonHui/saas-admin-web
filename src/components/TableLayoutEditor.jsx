@@ -5,6 +5,13 @@ import Loading from './Loading'
 // 좌석수 선택지 기본값(공통코드 TABLE_SEATS 로딩 실패 시 폴백).
 const DEFAULT_SEATS = [{ value: 2, label: '2인' }, { value: 4, label: '4인' }, { value: 6, label: '6인' }, { value: 8, label: '8인' }]
 
+// 포장 설정 3단(연결형 토글): 포장불가 / 포장가능(홀+포장) / 포장전문(테이블 없음).
+const PK_MODES = [
+  { key: 'none', label: '포장불가', color: '#8b8b9a' },
+  { key: 'available', label: '포장가능', color: '#22c55e' },
+  { key: 'only', label: '포장전문', color: '#3525cd' },
+]
+
 // 좌석수 콤보박스 — 공통코드 옵션 + "직접입력"(임의 인원).
 function SeatSelect({ value, options, onChange }) {
   const coded = options.some((o) => o.value === value)
@@ -62,11 +69,13 @@ const CANVAS_H = 460
  *  - onError(msg)
  */
 const TableLayoutEditor = forwardRef(function TableLayoutEditor({
-  loadLayout, onSave, loadTableQr, loadSeatOptions,
+  loadLayout, onSave, loadTableQr, loadTakeoutQr, loadSeatOptions,
   title = '영업장 테이블 배치', subtitle,
   embedded = false, hideActions = false, onClose, onSaved, onError,
 }, ref) {
   const [takeout, setTakeout] = useState(false)
+  const [takeoutEnabled, setTakeoutEnabled] = useState(false)
+  const [takeoutQrOpen, setTakeoutQrOpen] = useState(false)
   const [floorCount, setFloorCount] = useState(1)
   const [floor, setFloor] = useState(1)
   const [canvasW, setCanvasW] = useState(CANVAS_W)
@@ -93,6 +102,7 @@ const TableLayoutEditor = forwardRef(function TableLayoutEditor({
     loadLayout()
       .then((l) => {
         setTakeout(l.takeoutOnly)
+        setTakeoutEnabled(!!l.takeoutEnabled)
         setFloorCount(Math.max(1, l.floorCount || 1))
         setCanvasW(l.canvasW || CANVAS_W)
         setCanvasH(l.canvasH || CANVAS_H)
@@ -312,6 +322,7 @@ const TableLayoutEditor = forwardRef(function TableLayoutEditor({
     try {
       const body = {
         takeoutOnly: takeout,
+        takeoutEnabled,
         floorCount,
         canvasW,
         canvasH,
@@ -344,10 +355,36 @@ const TableLayoutEditor = forwardRef(function TableLayoutEditor({
         </div>
       )}
 
-      <label className="check layout-takeout">
-        <input type="checkbox" checked={takeout} onChange={(e) => setTakeout(e.target.checked)} />
-        포장 전문점 (테이블 없음)
-      </label>
+      <div className="pk-block">
+        <div className="pk-toggle" role="tablist" aria-label="포장 주문 설정">
+          {PK_MODES.map((m) => {
+            const on = (takeout ? 'only' : (takeoutEnabled ? 'available' : 'none')) === m.key
+            return (
+              <button
+                key={m.key}
+                type="button"
+                role="tab"
+                aria-selected={on}
+                className={`pk-node${on ? ' on' : ''}`}
+                style={{ '--dot': m.color }}
+                onClick={() => {
+                  setTakeout(m.key === 'only')
+                  setTakeoutEnabled(m.key === 'available' || m.key === 'only')
+                }}
+              >
+                <span className="pk-dot" />
+                <span className="pk-label">{m.label}</span>
+              </button>
+            )
+          })}
+        </div>
+        {(takeoutEnabled || takeout) && loadTakeoutQr && (
+          <div className="layout-takeout-qr">
+            <button type="button" className="btn-ghost btn-sm" onClick={() => setTakeoutQrOpen(true)}>포장 QR 보기</button>
+            <span className="hint">저장해야 적용됩니다. ‘포장불가’로 저장하면 손님 포장 주문이 정지됩니다.</span>
+          </div>
+        )}
+      </div>
 
       {takeout ? (
         <p className="layout-takeout-msg">포장 전문점으로 설정되어 테이블 배치를 입력하지 않습니다.</p>
@@ -505,6 +542,14 @@ const TableLayoutEditor = forwardRef(function TableLayoutEditor({
         />
       )}
 
+      {takeoutQrOpen && (
+        <TakeoutQrModal
+          loadQr={loadTakeoutQr}
+          onClose={() => setTakeoutQrOpen(false)}
+          onError={onError}
+        />
+      )}
+
       <ConfirmDialog
         open={!!confirmState}
         message={confirmState?.message}
@@ -554,6 +599,36 @@ function TableQrModal({ table, loadQr, onClose, onError }) {
         <div className="dialog-actions">
           <button className="btn-ghost" onClick={onClose}>닫기</button>
           {src && <a className="btn-primary btn-sm qr-dl" href={src} download={`table-qr-${table.tableId}.png`}>PNG 다운로드</a>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** 포장 전용 주문 QR 모달 — 매장 입구·픽업대에 붙이는 용도. */
+function TakeoutQrModal({ loadQr, onClose, onError }) {
+  const [src, setSrc] = useState(null)
+  useEffect(() => {
+    if (!loadQr) return undefined
+    let url
+    loadQr()
+      .then((u) => { url = u; setSrc(u) })
+      .catch((e) => onError(e.message))
+    return () => { if (url) URL.revokeObjectURL(url) }
+  }, [loadQr, onError])
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal qr-modal" onClick={(e) => e.stopPropagation()}>
+        <h3>포장 주문 QR</h3>
+        <p className="qr-sub">포장 전용 · 테이블 없음</p>
+        <div className="qr-box">
+          {src ? <img src={src} alt="포장 주문 QR" width="240" height="240" /> : <span className="muted">생성 중…</span>}
+        </div>
+        <p className="qr-note">손님이 이 QR을 스캔하면 포장 주문 화면으로 이동합니다. 포장주문을 끄면(체크 해제 후 저장) 이 QR로 들어와도 “정지” 안내가 표시됩니다.</p>
+        <div className="dialog-actions">
+          <button className="btn-ghost" onClick={onClose}>닫기</button>
+          {src && <a className="btn-primary btn-sm qr-dl" href={src} download="takeout-qr.png">PNG 다운로드</a>}
         </div>
       </div>
     </div>

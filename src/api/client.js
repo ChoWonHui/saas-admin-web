@@ -149,6 +149,15 @@ export const menuApi = {
   remove: (id) => api(`/api/platform-admin/menus/${id}`, { method: 'DELETE' }),
 }
 
+// 사장님 콘솔 메뉴 정책(전역) — 모든 업체가 공유. 역할(대표/홀/주방)별 노출.
+export const tenantMenuPolicyApi = {
+  list: () => api('/api/platform-admin/tenant-menus'),
+  add: (body) => api('/api/platform-admin/tenant-menus', { method: 'POST', body }),
+  update: (menuId, body) => api(`/api/platform-admin/tenant-menus/${menuId}`, { method: 'PATCH', body }),
+  remove: (menuId) => api(`/api/platform-admin/tenant-menus/${menuId}`, { method: 'DELETE' }),
+  reorder: (orderedIds) => api('/api/platform-admin/tenant-menus/reorder', { method: 'POST', body: { orderedIds } }),
+}
+
 // 공통코드. 그룹코드·코드값은 생성 후 불변 — 이름(라벨)만 바꾼다.
 export const codeApi = {
   groups: () => api('/api/platform-admin/code-groups'),
@@ -160,6 +169,32 @@ export const codeApi = {
   // 드래그앤드랍 순서 변경. position = 같은 그룹 형제(자신 제외)에서의 0 기반 위치.
   moveCode: (id, position) => api(`/api/platform-admin/codes/${id}/move`, { method: 'POST', body: { position } }),
   removeCode: (id) => api(`/api/platform-admin/codes/${id}`, { method: 'DELETE' }),
+}
+
+// 가게 꾸미기(store decorate) 카탈로그. 대분류(고정) → 소분류(분류) → 항목. 모든 업체 에디터가 공유.
+export const decorateApi = {
+  catalog: () => api('/api/platform-admin/decorate/categories'),
+  createCategory: (body) => api('/api/platform-admin/decorate/categories', { method: 'POST', body }),
+  updateCategory: (id, body) => api(`/api/platform-admin/decorate/categories/${id}`, { method: 'PATCH', body }),
+  removeCategory: (id) => api(`/api/platform-admin/decorate/categories/${id}`, { method: 'DELETE' }),
+  createItem: (categoryId, body) => api(`/api/platform-admin/decorate/categories/${categoryId}/items`, { method: 'POST', body }),
+  updateItem: (id, body) => api(`/api/platform-admin/decorate/items/${id}`, { method: 'PATCH', body }),
+  removeItem: (id) => api(`/api/platform-admin/decorate/items/${id}`, { method: 'DELETE' }),
+  // 머리·모자 그림 업로드(DB 저장, S3 불필요). 성공 시 { url }. 멀티파트라 api() 대신 직접 fetch.
+  async uploadImage(file) {
+    const form = new FormData()
+    form.append('file', file)
+    const doSend = () =>
+      fetch('/api/platform-admin/decorate/images', {
+        method: 'POST',
+        headers: tokenStore.access ? { Authorization: `Bearer ${tokenStore.access}` } : {},
+        body: form,
+      })
+    let res = await doSend()
+    if (res.status === 401 && tokenStore.refresh) { if (await refreshAccessToken()) res = await doSend() }
+    if (!res.ok) { if (res.status === 401) tokenStore.clear(); throw new ApiError(res.status, await parse(res)) }
+    return res.json()
+  },
 }
 
 // 조직 / 조직도. 관리자 화면 우측이 이걸 쓴다.
@@ -191,6 +226,12 @@ export const calendarPermApi = {
     api(`/api/platform-admin/calendar/permissions?${new URLSearchParams({ subjectType, subjectKey })}`),
   put: (subjectType, subjectKey, permKeys) =>
     api('/api/platform-admin/calendar/permissions', { method: 'PUT', body: { subjectType, subjectKey, permKeys } }),
+}
+
+// 플랫폼(본사) 광고 배너 — 전 매장 손님 화면 하단 공통 노출.
+export const adApi = {
+  get: () => api('/api/platform-admin/ad'),
+  save: (body) => api('/api/platform-admin/ad', { method: 'PUT', body }),
 }
 
 // 파일 업로드(공지 에디터 이미지). 멀티파트라 JSON api() 헬퍼를 쓰지 않고 직접 보낸다.
@@ -299,6 +340,23 @@ export const tenantApi = {
   },
   get: (id) => api(`/api/platform-admin/tenants/${id}`),
   plans: () => api('/api/platform-admin/tenants/plans'),
+  // 업체별 주문 조회(읽기 전용). status 는 CSV(예: RECEIVED,COOKING). 비우면 전체.
+  // 날짜별 페이징 주문 목록 → { content, date, page, size, totalElements, totalPages }
+  orders: (id, status = '', date = '', page = 0, size = 20) =>
+    api(`/api/platform-admin/tenants/${id}/orders?${status ? `status=${encodeURIComponent(status)}&` : ''}${date ? `date=${date}&` : ''}page=${page}&size=${size}`),
+  // 업체별 가게 꾸미기(store decorate) 조회(읽기 전용). 미표시 상태여도 반환.
+  home: (id) => api(`/api/platform-admin/tenants/${id}/home`),
+  // 업체별 대기(예약) 관리 — 확인·발급·호출·착석·취소.
+  waitlist: (id) => api(`/api/platform-admin/tenants/${id}/waitlist`),
+  waitlistAdd: (id, body) => api(`/api/platform-admin/tenants/${id}/waitlist`, { method: 'POST', body }),
+  waitlistStatus: (id, entryId, status) => api(`/api/platform-admin/tenants/${id}/waitlist/${entryId}/status`, { method: 'PATCH', body: { status } }),
+  waitlistCancel: (id, entryId) => api(`/api/platform-admin/tenants/${id}/waitlist/${entryId}`, { method: 'DELETE' }),
+  // 업체별 매출 통계(결제 주문 기간별) + 결제 취소.
+  stats: (id, from, to) => api(`/api/platform-admin/tenants/${id}/stats?from=${from}&to=${to}`),
+  statsCancel: (id, orderId) => api(`/api/platform-admin/tenants/${id}/stats/payments/${orderId}/cancel`, { method: 'POST' }),
+  // 업체별 메뉴 품절 관리 — 주문관리 화면에서. 손님 메뉴판 즉시 반영.
+  menu: (id) => api(`/api/platform-admin/tenants/${id}/menu`),
+  menuSoldOut: (id, itemId, soldOut) => api(`/api/platform-admin/tenants/${id}/menu/items/${itemId}/soldout`, { method: 'PATCH', body: { soldOut } }),
   // 업체 정보만 등록(대표 계정 없이).
   create: (body) => api('/api/platform-admin/tenants', { method: 'POST', body }),
   update: (id, body) => api(`/api/platform-admin/tenants/${id}`, { method: 'PATCH', body }),
@@ -324,6 +382,17 @@ export const tenantApi = {
   async tableQr(id, branchId, tableId) {
     const send = () =>
       fetch(`/api/platform-admin/tenants/${id}/branches/${branchId}/tables/${tableId}/qr`, {
+        headers: tokenStore.access ? { Authorization: `Bearer ${tokenStore.access}` } : {},
+      })
+    let res = await send()
+    if (res.status === 401 && tokenStore.refresh) { if (await refreshAccessToken()) res = await send() }
+    if (!res.ok) { if (res.status === 401) tokenStore.clear(); throw new ApiError(res.status, await parse(res)) }
+    return URL.createObjectURL(await res.blob())
+  },
+  // 포장 전용 QR PNG → object URL. (가게 단위, 테이블 id 불필요)
+  async takeoutQr(id, branchId) {
+    const send = () =>
+      fetch(`/api/platform-admin/tenants/${id}/branches/${branchId}/takeout-qr`, {
         headers: tokenStore.access ? { Authorization: `Bearer ${tokenStore.access}` } : {},
       })
     let res = await send()

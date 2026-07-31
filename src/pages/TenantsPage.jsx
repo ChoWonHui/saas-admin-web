@@ -16,6 +16,10 @@ function seatOptionsFromCodes() {
 import { openPostcode, preloadPostcode } from '../lib/postcode'
 import MenuEditor from '../components/MenuEditor'
 import StaffModal from '../components/StaffModal'
+import TenantOrdersModal from '../components/TenantOrdersModal'
+import TenantDecorateModal from '../components/TenantDecorateModal'
+import TenantWaitlistModal from '../components/TenantWaitlistModal'
+import TenantStatsModal from '../components/TenantStatsModal'
 import Shell from '../components/Shell'
 
 const STATUS_LABEL = {
@@ -40,6 +44,10 @@ export default function TenantsPage() {
   const [menu, setMenu] = useState(null) // 우클릭 메뉴 { x, y, tenant }
   const [branchFor, setBranchFor] = useState(null) // 지점 관리 대상 업체
   const [staffFor, setStaffFor] = useState(null) // 직원 관리 대상 업체
+  const [ordersFor, setOrdersFor] = useState(null) // 주문 조회 대상 업체
+  const [decorateFor, setDecorateFor] = useState(null) // 가게 꾸미기(미니룸) 조회 대상 업체
+  const [waitlistFor, setWaitlistFor] = useState(null) // 대기 관리 대상 업체
+  const [statsFor, setStatsFor] = useState(null) // 매출 통계 대상 업체
   const [ownerFor, setOwnerFor] = useState(null) // 방금 등록한 업체 — 대표 계정 만들기 단계
   const [firstBranchFor, setFirstBranchFor] = useState(null) // 대표 만든 뒤 — 1호점 등록 단계
 
@@ -129,7 +137,6 @@ export default function TenantsPage() {
                 <tr>
                   <th className="col-grow">업체명</th>
                   <th style={{ width: 90 }}>코드</th>
-                  <th style={{ width: 110 }}>slug</th>
                   <th style={{ width: 80 }}>상태</th>
                   <th style={{ width: 80 }}>지점</th>
                   <th style={{ width: 100 }}>요금제</th>
@@ -151,7 +158,6 @@ export default function TenantsPage() {
                       {t.deleted && <span className="badge" style={{ marginLeft: 6 }}>삭제됨</span>}
                     </td>
                     <td className="mono">{t.tenantCode}</td>
-                    <td className="mono">{t.tenantSlug}</td>
                     <td>
                       <span className={`badge badge-${t.status?.toLowerCase()}`}>
                         {STATUS_LABEL[t.status] ?? t.status}
@@ -193,6 +199,10 @@ export default function TenantsPage() {
               <li onClick={() => { setDialog({ mode: 'edit', tenant: menu.tenant }); setMenu(null) }}>수정</li>
               <li onClick={() => { setBranchFor(menu.tenant); setMenu(null) }}>지점(호점) 관리</li>
               <li onClick={() => { setStaffFor(menu.tenant); setMenu(null) }}>직원 관리</li>
+              <li onClick={() => { setOrdersFor(menu.tenant); setMenu(null) }}>주문 관리</li>
+              <li onClick={() => { setStatsFor(menu.tenant); setMenu(null) }}>매출 통계</li>
+              <li onClick={() => { setWaitlistFor(menu.tenant); setMenu(null) }}>대기 관리</li>
+              <li onClick={() => { setDecorateFor(menu.tenant); setMenu(null) }}>가게 꾸미기 보기</li>
               {(menu.tenant.status === 'PENDING' || menu.tenant.status === 'SUSPENDED') && (
                 <li onClick={() => { setConfirm({ mode: 'activate', tenant: menu.tenant }); setMenu(null) }}>서비스 개설</li>
               )}
@@ -245,6 +255,39 @@ export default function TenantsPage() {
           onError={setError}
         />
       )}
+
+      {ordersFor && (
+        <TenantOrdersModal
+          tenant={ordersFor}
+          onClose={() => setOrdersFor(null)}
+          onError={setError}
+        />
+      )}
+
+      {decorateFor && (
+        <TenantDecorateModal
+          tenant={decorateFor}
+          onClose={() => setDecorateFor(null)}
+          onError={setError}
+        />
+      )}
+
+      {waitlistFor && (
+        <TenantWaitlistModal
+          tenant={waitlistFor}
+          onClose={() => setWaitlistFor(null)}
+          onError={setError}
+        />
+      )}
+
+      {statsFor && (
+        <TenantStatsModal
+          tenant={statsFor}
+          onClose={() => setStatsFor(null)}
+          onError={setError}
+        />
+      )}
+
 
       {ownerFor && (
         <OwnerSetupDialog
@@ -569,6 +612,7 @@ function BranchModal({ tenant, onClose, onChanged, onError }) {
           loadLayout={() => tenantApi.layout(tenant.tenantId, layoutFor.branchId)}
           onSave={(body) => tenantApi.saveLayout(tenant.tenantId, layoutFor.branchId, body)}
           loadTableQr={(table) => tenantApi.tableQr(tenant.tenantId, layoutFor.branchId, table.tableId)}
+          loadTakeoutQr={() => tenantApi.takeoutQr(tenant.tenantId, layoutFor.branchId)}
           loadSeatOptions={seatOptionsFromCodes}
           subtitle={`${layoutFor.branchNo}호점${layoutFor.name ? ` (${layoutFor.name})` : ''}`}
           onClose={() => setLayoutFor(null)}
@@ -596,10 +640,10 @@ function TenantDialog({ dialog, plans, onClose, onSaved, onError }) {
   const t = dialog.tenant
   const [form, setForm] = useState({
     tenantName: t?.tenantName ?? '',
-    tenantSlug: t?.tenantSlug ?? '',
     planId: t?.planId ?? '',
     ownerName: t?.ownerName ?? '',
     businessNo: t?.businessNo ?? '',
+    mailOrderSalesNo: t?.mailOrderSalesNo ?? '',
     contactPhone: t?.contactPhone ?? '',
     contactEmail: t?.contactEmail ?? '',
     postalCode: t?.postalCode ?? '',
@@ -619,16 +663,14 @@ function TenantDialog({ dialog, plans, onClose, onSaved, onError }) {
 
   async function save() {
     if (!form.tenantName.trim()) { onError('업체명을 입력하세요.'); return }
-    const slug = form.tenantSlug.trim().toLowerCase()
-    if (slug.length < 3) { onError('경로(slug)는 3자 이상이어야 합니다.'); return }
     setSaving(true)
     try {
       const body = {
         tenantName: form.tenantName.trim(),
-        tenantSlug: slug,
         planId: form.planId === '' ? null : Number(form.planId),
         ownerName: form.ownerName,
         businessNo: form.businessNo,
+        mailOrderSalesNo: form.mailOrderSalesNo,
         contactPhone: form.contactPhone,
         contactEmail: form.contactEmail,
         postalCode: form.postalCode,
@@ -656,15 +698,6 @@ function TenantDialog({ dialog, plans, onClose, onSaved, onError }) {
         <input value={form.tenantName} onChange={set('tenantName')} autoFocus maxLength={100} />
       </label>
 
-      <label className="field">
-        <span>경로(slug) <span className="req">*</span></span>
-        <input value={form.tenantSlug} onChange={set('tenantSlug')} placeholder="delicious" maxLength={30} />
-        <span className="field-hint">
-          영소문자·숫자·하이픈, 3~30자.
-          {editing ? ' 바꾸면 기존 주소·QR 링크가 새 경로로 바뀝니다.' : ''}
-        </span>
-      </label>
-
       <div className="field-row">
         <label className="field">
           <span>요금제</span>
@@ -685,10 +718,15 @@ function TenantDialog({ dialog, plans, onClose, onSaved, onError }) {
           <input value={form.businessNo} onChange={set('businessNo')} placeholder="123-45-67890" maxLength={20} />
         </label>
         <label className="field">
-          <span>연락처</span>
-          <input value={form.contactPhone} onChange={set('contactPhone')} placeholder="02-1234-5678" maxLength={20} />
+          <span>통신판매업 신고번호</span>
+          <input value={form.mailOrderSalesNo} onChange={set('mailOrderSalesNo')} placeholder="2026-서울강남-01234" maxLength={30} />
         </label>
       </div>
+
+      <label className="field">
+        <span>연락처</span>
+        <input value={form.contactPhone} onChange={set('contactPhone')} placeholder="02-1234-5678" maxLength={20} />
+      </label>
 
       <label className="field">
         <span>연락 이메일</span>

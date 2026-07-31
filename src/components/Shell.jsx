@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
+import { adminPath } from '../adminBase'
 import { useAuth } from '../auth/AuthContext'
 import { useMenus } from './useMenus'
 
@@ -19,9 +20,10 @@ function MenuLink({ item, onNavigate }) {
       </a>
     )
   }
+  // 메뉴 url 은 논리 경로(/dashboard)로 저장 → 시스템 관리자 접두 경로를 붙여 이동한다.
   return (
     <NavLink
-      to={item.url ?? '#'}
+      to={item.url ? adminPath(item.url) : '#'}
       className={({ isActive }) => (isActive ? 'nav-on' : '')}
       onClick={onNavigate}
     >
@@ -100,7 +102,7 @@ export default function Shell({ children }) {
             {mobileOpen ? '✕' : '☰'}
           </button>
           {/* 로고 클릭 → 대시보드로 */}
-          <Link to="/dashboard" className="brand" aria-label="대시보드로 이동">
+          <Link to={adminPath('/dashboard')} className="brand" aria-label="대시보드로 이동">
             <span className="wordmark">EXPRISM</span>
             <span className="brand-sub">Admin</span>
           </Link>

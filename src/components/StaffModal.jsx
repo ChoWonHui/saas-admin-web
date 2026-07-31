@@ -3,8 +3,8 @@ import { staffApi } from '../api/client'
 
 const ROLE_OPTIONS = [
   { id: 2, name: '대표' },
-  { id: 3, name: '매니저' },
-  { id: 4, name: '직원' },
+  { id: 3, name: '홀' },
+  { id: 4, name: '주방' },
 ]
 const STATUS_LABEL = { ACTIVE: '활성', SUSPENDED: '정지', INVITED: '초대됨' }
 

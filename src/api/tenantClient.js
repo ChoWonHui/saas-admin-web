@@ -130,6 +130,19 @@ export const tenantTableApi = {
     if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => null))
     return URL.createObjectURL(await res.blob())
   },
+  // 포장 전용 QR PNG → object URL. (가게 단위, 테이블 id 불필요)
+  takeoutQr: async () => {
+    const run = () => fetch('/api/tenant/tables/takeout-qr', {
+      headers: tenantTokenStore.access ? { Authorization: `Bearer ${tenantTokenStore.access}` } : {},
+    })
+    let res = await run()
+    if (res.status === 401 && tenantTokenStore.refresh) {
+      try { await tenantAuthApi.me() } catch { /* noop */ }
+      res = await run()
+    }
+    if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => null))
+    return URL.createObjectURL(await res.blob())
+  },
 }
 
 // 멀티파트 업로드(이미지). 401 이면 한 번 갱신 후 재시도.
@@ -159,6 +172,8 @@ export const tenantMenuBoardApi = {
   addItem: (_t, _b, cid, body) => tenantApiCall(`/api/tenant/menu/categories/${cid}/items`, { method: 'POST', body }),
   updateItem: (_t, _b, iid, body) => tenantApiCall(`/api/tenant/menu/items/${iid}`, { method: 'PATCH', body }),
   deleteItem: (_t, _b, iid) => tenantApiCall(`/api/tenant/menu/items/${iid}`, { method: 'DELETE' }),
+  // 주문관리 화면의 빠른 품절 토글 — 손님 메뉴판에 즉시 반영.
+  setSoldOut: (iid, soldOut) => tenantApiCall(`/api/tenant/menu/items/${iid}/soldout`, { method: 'PATCH', body: { soldOut } }),
   // 업체는 지점이 하나라 다른 지점 복사는 쓰지 않지만, 시그니처는 맞춰 둔다.
   copy: (_t, _b, fromBranchId) => tenantApiCall('/api/tenant/menu/copy', { method: 'POST', body: { fromBranchId } }),
 }
@@ -169,6 +184,53 @@ export const tenantImageApi = {
   searchImages: (q, page = 1) =>
     tenantApiCall(`/api/tenant/files/image-search?${new URLSearchParams({ q, page })}`),
   saveFromUrl: (url) => tenantApiCall('/api/tenant/files/from-url', { method: 'POST', body: { url } }),
+}
+
+// 가게 메인 페이지(홈) 편집 — 손님 QR 화면에 보일 소개/영업시간 등.
+export const tenantHomeApi = {
+  get: () => tenantApiCall('/api/tenant/home'),
+  save: (body) => tenantApiCall('/api/tenant/home', { method: 'PUT', body }),
+}
+
+// 업체 직원 관리 — 대표(사장님)만. 로그인은 업체코드+아이디+비번.
+export const tenantStaffApi = {
+  list: () => tenantApiCall('/api/tenant/staff'),
+  create: (body) => tenantApiCall('/api/tenant/staff', { method: 'POST', body }),
+  update: (id, body) => tenantApiCall(`/api/tenant/staff/${id}`, { method: 'PATCH', body }),
+  resetPassword: (id, newPassword) =>
+    tenantApiCall(`/api/tenant/staff/${id}/password`, { method: 'POST', body: { newPassword } }),
+  remove: (id) => tenantApiCall(`/api/tenant/staff/${id}`, { method: 'DELETE' }),
+}
+
+// 업체 주문 관리.
+export const tenantOrderApi = {
+  // 날짜별 페이징 목록 → { content, date, page, size, totalElements, totalPages }
+  list: (status = 'ALL', date = '', page = 0, size = 20) =>
+    tenantApiCall(`/api/tenant/orders?status=${encodeURIComponent(status)}${date ? `&date=${date}` : ''}&page=${page}&size=${size}`),
+  // 진행 중(활성) 주문 — 테이블 현황판용
+  active: () => tenantApiCall('/api/tenant/orders/active'),
+  get: (id) => tenantApiCall(`/api/tenant/orders/${id}`),
+  create: (body) => tenantApiCall('/api/tenant/orders', { method: 'POST', body }),
+  changeStatus: (id, status) => tenantApiCall(`/api/tenant/orders/${id}/status`, { method: 'PATCH', body: { status } }),
+}
+
+// 업체 대기(예약) 관리 — 테이블 점유 현황 + 대기 순번 발급/호출/착석/취소.
+export const tenantWaitlistApi = {
+  board: () => tenantApiCall('/api/tenant/waitlist'),
+  add: (body) => tenantApiCall('/api/tenant/waitlist', { method: 'POST', body }),
+  changeStatus: (id, status) => tenantApiCall(`/api/tenant/waitlist/${id}/status`, { method: 'PATCH', body: { status } }),
+  cancel: (id) => tenantApiCall(`/api/tenant/waitlist/${id}`, { method: 'DELETE' }),
+}
+
+// 콘솔 메뉴 — 로그인 역할(대표/홀/주방)이 볼 수 있는 상단 메뉴.
+export const tenantMenuApi = {
+  myMenus: () => tenantApiCall('/api/tenant/menus'),
+}
+
+// 매출 통계 — 결제된 주문 기간별 집계 + 결제 취소.
+export const tenantStatsApi = {
+  stats: (from, to) => tenantApiCall(`/api/tenant/stats?from=${from}&to=${to}`),
+  cancelPayment: (orderId) => tenantApiCall(`/api/tenant/stats/payments/${orderId}/cancel`, { method: 'POST' }),
 }
 
 // 업체 공지사항(조회 전용) — 관리자가 등록한 공지 + 팝업 목록.

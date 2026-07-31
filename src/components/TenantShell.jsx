@@ -1,14 +1,26 @@
 import { useEffect, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useTenantAuth } from '../auth/TenantAuthContext'
-import { tenantNoticeBoardApi } from '../api/tenantClient'
+import { tenantNoticeBoardApi, tenantMenuApi } from '../api/tenantClient'
 import Icon from './Icon'
 
 const ROLE_LABEL = {
   TENANT_OWNER: '대표',
-  TENANT_MANAGER: '매니저',
-  TENANT_STAFF: '직원',
+  TENANT_MANAGER: '홀',
+  TENANT_STAFF: '주방',
 }
+
+// API 실패 시 폴백용 기본 네비(대표 기준). 정상 동작 시엔 /api/tenant/menus 결과를 쓴다.
+const NAV = [
+  { to: '/admin', end: true, label: '홈', icon: 'cottage' },
+  { to: '/admin/orders', label: '주문', icon: 'receipt_long' },
+  { to: '/admin/waitlist', label: '예약', icon: 'event' },
+  { to: '/admin/tables', label: '테이블', icon: 'table_restaurant' },
+  { to: '/admin/menu', label: '메뉴판', icon: 'restaurant_menu' },
+  { to: '/admin/staff', label: '직원', icon: 'group', ownerOnly: true },
+  { to: '/admin/notices', label: '공지사항', icon: 'campaign' },
+  { to: '/admin/inquiries', label: '문의', icon: 'forum' },
+]
 
 const DISMISS_KEY = 'saas.tenant.noticePopupDismiss'   // "오늘 하루 보지 않기" (localStorage, 날짜별)
 const SESSION_KEY = 'saas.tenant.noticePopupSeen'      // 닫기(이번 세션 동안 다시 안 뜸)
@@ -72,20 +84,43 @@ function NoticePopupHost() {
 // 업체(사장님) 콘솔 공통 껍데기 — Material Design 3(인디고) 톤. 상단 내비 + 푸터 + 공지 팝업.
 export default function TenantShell({ children }) {
   const { user, logout } = useTenantAuth()
+  const { pathname } = useLocation()
+  const [menuOpen, setMenuOpen] = useState(false)
   const navClass = ({ isActive }) => `m-nav-link${isActive ? ' on' : ''}`
+  const mnavClass = ({ isActive }) => `m-mnav-link${isActive ? ' on' : ''}`
+
+  // 상단 메뉴는 서버에서 역할별로 필터돼 온다. 실패하면 하드코딩 폴백(대표 기준)으로 콘솔이 안 끊기게.
+  const [items, setItems] = useState(() =>
+    NAV.filter((n) => !n.ownerOnly).map((n) => ({ id: n.to, to: n.to, end: n.end, label: n.label, icon: n.icon })))
+  useEffect(() => {
+    let alive = true
+    tenantMenuApi.myMenus()
+      .then((rows) => {
+        if (!alive) return
+        setItems(rows.map((r) => ({ id: r.id, to: r.url, end: r.url === '/admin', label: r.name, icon: r.icon || 'chevron_right' })))
+      })
+      .catch(() => {
+        if (!alive) return
+        setItems(NAV.filter((n) => !n.ownerOnly || user?.roleCode === 'TENANT_OWNER')
+          .map((n) => ({ id: n.to, to: n.to, end: n.end, label: n.label, icon: n.icon })))
+      })
+    return () => { alive = false }
+  }, [user?.roleCode])
+
+  // 화면을 옮기면 모바일 메뉴는 닫는다.
+  useEffect(() => { setMenuOpen(false) }, [pathname])
 
   return (
     <div className="tenant-shell">
       <header className="m-topbar">
         <div className="m-topbar-inner">
           <div className="m-topbar-left">
-            <span className="m-logo">EXPRISM</span>
+            <button type="button" className="m-hamburger" aria-label="메뉴" onClick={() => setMenuOpen((v) => !v)}>
+              <Icon name={menuOpen ? 'close' : 'menu'} />
+            </button>
+            <Link to="/admin/orders" className="m-logo m-logo-link" title="주문 관리로 이동">EXPRISM</Link>
             <nav className="m-nav">
-              <NavLink to="/admin" end className={navClass}>홈</NavLink>
-              <NavLink to="/admin/tables" className={navClass}>테이블</NavLink>
-              <NavLink to="/admin/menu" className={navClass}>메뉴판</NavLink>
-              <NavLink to="/admin/notices" className={navClass}>공지사항</NavLink>
-              <NavLink to="/admin/inquiries" className={navClass}>문의</NavLink>
+              {items.map((n) => <NavLink key={n.id} to={n.to} end={n.end} className={navClass}>{n.label}</NavLink>)}
             </nav>
           </div>
           <div className="m-topbar-right">
@@ -99,6 +134,21 @@ export default function TenantShell({ children }) {
           </div>
         </div>
       </header>
+
+      {/* 모바일 드로어 네비 */}
+      <div className={`m-mnav-backdrop${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)} />
+      <nav className={`m-mnav${menuOpen ? ' open' : ''}`} aria-hidden={!menuOpen}>
+        <div className="m-mnav-user">
+          <Icon name="storefront" />
+          <span>{user?.email}{user?.roleCode && ` · ${ROLE_LABEL[user.roleCode] || user.roleCode}`}</span>
+        </div>
+        {items.map((n) => (
+          <NavLink key={n.id} to={n.to} end={n.end} className={mnavClass}>
+            <Icon name={n.icon} /> {n.label}
+          </NavLink>
+        ))}
+        <button type="button" className="m-mnav-logout" onClick={logout}><Icon name="logout" /> 로그아웃</button>
+      </nav>
 
       <main className="m-main">{children}</main>
 

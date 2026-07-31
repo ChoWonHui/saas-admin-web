@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Toast from '../components/Toast'
 import { menuApi } from '../api/client'
 import Shell from '../components/Shell'
@@ -56,6 +56,7 @@ export default function MenusPage() {
   const [menu, setMenu] = useState(null) // 우클릭 메뉴 { x, y, item }
   const [dragId, setDragId] = useState(null)
   const [dropHint, setDropHint] = useState(null) // { id, zone: 'before' | 'after' | 'into' }
+  const tbodyRef = useRef(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -89,7 +90,6 @@ export default function MenusPage() {
   }, [menu])
 
   const rows = flatten(tree, collapsed)
-  const dragRow = rows.find((r) => r.id === dragId) ?? null
   const topLevel = tree
 
   function toggleCollapse(id) {
@@ -107,49 +107,64 @@ export default function MenusPage() {
     await refreshMenus() // 상단 내비게이션에 즉시 반영
   }
 
-  // --- 드래그앤드랍 ---
+  // --- 드래그앤드랍 (포인터 기반 — 네이티브 HTML5 DnD 대신. 마우스·터치·모든 브라우저에서 동작) ---
 
-  function onDragOver(event, target) {
-    if (!dragRow || dragRow.id === target.id) return
-    event.preventDefault()
+  // 드래그 손잡이(⠿)를 누르면 시작. rows/tree 를 그 시점 스냅샷으로 클로저에 담는다(드래그 중엔 안 바뀜).
+  function startPointerDrag(e, row) {
+    if (e.button != null && e.button !== 0) return // 좌클릭만
+    e.preventDefault()
+    e.stopPropagation()
+    const dragRowNow = row
+    setDragId(row.id)
+    let currentDrop = null
 
-    const rect = event.currentTarget.getBoundingClientRect()
-    const ratio = (event.clientY - rect.top) / rect.height
-    // 상위 행: 위 30% = 앞에 / 아래 30% = 뒤에 / 가운데 = 그 밑으로.  하위 행: 반반.
-    let zone
-    if (target.depth === 0) {
-      zone = ratio < 0.3 ? 'before' : ratio > 0.7 ? 'after' : 'into'
-    } else {
-      zone = ratio < 0.5 ? 'before' : 'after'
-    }
-
-    const drop = computeDrop(dragRow, target, zone, tree)
-    event.dataTransfer.dropEffect = drop ? 'move' : 'none'
-    setDropHint(drop ? { id: target.id, zone } : null)
-  }
-
-  async function onDrop(event, target) {
-    event.preventDefault()
-    const hint = dropHint
-    setDropHint(null)
-    if (!hint || hint.id !== target.id) return
-    const drop = computeDrop(dragRow, target, hint.zone, tree)
-    if (!drop) return
-    try {
-      await menuApi.move(dragRow.id, drop)
-      // 접힌 묶음 안으로 넣었으면 결과가 보이게 펴 준다
-      if (drop.parentId != null) {
-        setCollapsed((prev) => {
-          const next = new Set(prev)
-          next.delete(drop.parentId)
-          return next
-        })
+    const move = (ev) => {
+      const rowEls = tbodyRef.current ? [...tbodyRef.current.querySelectorAll('tr[data-id]')] : []
+      let matched = false
+      for (const el of rowEls) {
+        const rc = el.getBoundingClientRect()
+        if (ev.clientY >= rc.top && ev.clientY <= rc.bottom) {
+          const id = Number(el.getAttribute('data-id'))
+          const target = rows.find((r) => r.id === id)
+          if (target) {
+            const ratio = (ev.clientY - rc.top) / rc.height
+            const zone = target.depth === 0
+              ? (ratio < 0.3 ? 'before' : ratio > 0.7 ? 'after' : 'into')
+              : (ratio < 0.5 ? 'before' : 'after')
+            const drop = computeDrop(dragRowNow, target, zone, tree)
+            currentDrop = drop
+            setDropHint(drop ? { id, zone } : null)
+          }
+          matched = true
+          break
+        }
       }
-      await load()
-      await refreshMenus()
-    } catch (e) {
-      setError(e.message)
+      if (!matched) { currentDrop = null; setDropHint(null) }
     }
+
+    const up = async () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      document.body.classList.remove('menu-dragging')
+      setDragId(null)
+      setDropHint(null)
+      const drop = currentDrop
+      if (!drop) return
+      try {
+        await menuApi.move(dragRowNow.id, drop)
+        if (drop.parentId != null) {
+          setCollapsed((prev) => { const next = new Set(prev); next.delete(drop.parentId); return next })
+        }
+        await load()
+        await refreshMenus()
+      } catch (err) {
+        setError(err.message)
+      }
+    }
+
+    document.body.classList.add('menu-dragging')
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
   }
 
   return (
@@ -180,7 +195,7 @@ export default function MenusPage() {
                   <th>순서</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody ref={tbodyRef}>
                 {rows.map((row) => (
                   <tr
                     key={row.id}
@@ -190,19 +205,6 @@ export default function MenusPage() {
                       dragId === row.id ? 'dragging' : '',
                       dropHint?.id === row.id ? `drop-${dropHint.zone}` : '',
                     ].filter(Boolean).join(' ')}
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.effectAllowed = 'move'
-                      e.dataTransfer.setData('text/plain', String(row.id))
-                      setDragId(row.id)
-                    }}
-                    onDragEnd={() => {
-                      setDragId(null)
-                      setDropHint(null)
-                    }}
-                    onDragOver={(e) => onDragOver(e, row)}
-                    onDragLeave={() => setDropHint((h) => (h?.id === row.id ? null : h))}
-                    onDrop={(e) => onDrop(e, row)}
                     onDoubleClick={() => setDialog({ mode: 'edit', item: row })}
                     onContextMenu={(e) => {
                       e.preventDefault()
@@ -227,7 +229,7 @@ export default function MenusPage() {
                         ) : (
                           <span className="tree-toggle-slot" />
                         )}
-                        <span className="drag-grip">⠿</span>
+                        <span className="drag-grip" title="끌어서 순서 변경" onPointerDown={(e) => startPointerDrag(e, row)}>⠿</span>
                         {row.name}
                       </span>
                     </td>
