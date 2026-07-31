@@ -200,6 +200,8 @@
 /* 배치 편집기 인디고 리스킨(공유 컴포넌트를 .tenant-shell 안에서만 덮어씀) */
 .tenant-shell .layout-embedded { border: 0; box-shadow: none; padding: 0; background: transparent; }
 .tenant-shell .layout-toolbar { background: var(--m-surface-low); border: 1px solid var(--m-outline-variant); border-radius: 12px; }
+/* 캔버스도 툴바와 짝이 되는 독립 라운드 카드로 — 각진 윗변이 아니라 깔끔히 분리되게 */
+.tenant-shell .layout-canvas-wrap { border: 1px solid var(--m-outline-variant); border-radius: 12px; margin-top: 10px; background: var(--m-surface-low); }
 .tenant-shell .floor-tab { background: var(--m-surface-high); border: 0; color: var(--m-secondary); }
 .tenant-shell .floor-tab.on { background: var(--m-primary); color: var(--m-on-primary); }
 .tenant-shell .layout-toolbar select,
@@ -231,6 +233,30 @@
 .tenant-shell .layout-marquee { border-color: var(--m-primary); background: rgba(53,37,205,.08); }
 .tenant-shell .lt-glabel, .tenant-shell .lt-size-val { color: var(--m-secondary); }
 .tenant-shell .hint.left { color: var(--m-secondary); }
+/* 모바일 카드 그리드·바텀시트 인디고 톤 */
+.tenant-shell .lt-mgrid-add { background: var(--m-primary); border-color: var(--m-primary); }
+.tenant-shell .lt-mcard.sel { border-color: var(--m-primary); box-shadow: 0 0 0 3px rgba(53,37,205,.14); }
+.tenant-shell .lt-mcard-badge { background: var(--m-primary); }
+.tenant-shell .tsheet-apply { background: var(--m-primary); }
+.tenant-shell .tsheet-switch.on .tsheet-sw-knob { background: var(--m-primary); }
+.tenant-shell .tsheet-switch.on .tsheet-sw-ic { background: #e6ecff; color: var(--m-primary); }
+.tenant-shell .tsheet-stepper button,
+.tenant-shell .tsheet-rot-reset { color: var(--m-primary); }
+.tenant-shell .lts-switch.on .lts-sw-knob { background: var(--m-primary); }
+
+/* 포장 주문 설정 — 컴팩트 SaaS 설정 카드 + 세그먼트 컨트롤 */
+.tenant-shell .pk-set { display: flex; flex-direction: column; gap: 14px; padding: 18px 20px; }
+.tenant-shell .pk-set-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tenant-shell .pk-set-h { margin: 0; font-size: 16px; font-weight: 700; color: var(--m-on-surface); }
+.tenant-shell .pk-set-qr { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border: 1px solid var(--m-outline-variant); border-radius: 10px; background: #fff; color: var(--m-primary); font-size: 13px; font-weight: 600; cursor: pointer; transition: background .12s; }
+.tenant-shell .pk-set-qr:hover { background: var(--m-surface-low); }
+.tenant-shell .pk-set-qr .material-symbols-outlined { font-size: 18px; }
+.tenant-shell .pk-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: var(--m-surface-low); border-radius: 12px; }
+.tenant-shell .pk-seg-btn { height: 40px; border: 0; border-radius: 9px; background: transparent; color: var(--m-secondary); font-size: 14px; font-weight: 600; cursor: pointer; transition: background .14s, color .14s, box-shadow .14s; }
+.tenant-shell .pk-seg-btn:hover:not(.on) { color: var(--m-on-surface); background: rgba(0,0,0,.03); }
+.tenant-shell .pk-seg-btn.on { background: var(--m-primary); color: #fff; box-shadow: 0 2px 6px rgba(53,37,205,.28); }
+.tenant-shell .pk-set-desc { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--m-secondary); }
+.tenant-shell .pk-set-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 
 /* 업체 공지사항 — 목록/상세 */
 .tn-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
@@ -620,46 +646,75 @@
 .pay-modal-actions .material-symbols-outlined { font-size: 18px; }
 .tenant-shell .iso-tool-img { width: 22px; height: 22px; object-fit: contain; display: block; }
 
-/* 대기(예약) 관리 */
-.tenant-shell .wl-status { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; }
-.tenant-shell .wl-status.full { border: 1px solid #e5a13c; background: linear-gradient(0deg, #fff8ee, #fff8ee), var(--m-surface-lowest); }
-.tenant-shell .wl-status-main { display: flex; align-items: center; gap: 14px; }
-.tenant-shell .wl-status-ic { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; background: var(--m-secondary-container); color: var(--m-primary); flex: none; }
-.tenant-shell .wl-status.full .wl-status-ic { background: #fce9cd; color: #b5761a; }
-.tenant-shell .wl-status-title { font-size: 17px; font-weight: 800; color: var(--m-on-surface); }
-.tenant-shell .wl-status-sub { font-size: 13.5px; color: var(--m-secondary); margin-top: 2px; }
-.tenant-shell .wl-dot { margin: 0 7px; opacity: 0.5; }
-.tenant-shell .wl-badge { flex: none; padding: 7px 14px; border-radius: 999px; background: #b5761a; color: #fff; font-size: 13px; font-weight: 700; }
+/* ── 예약·대기 관리 (사장님 콘솔) ── */
+/* 통계 4장 */
+.tenant-shell .wl-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.tenant-shell .wl-stat { display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: var(--m-surface-lowest); border: 1px solid var(--m-outline-variant); border-radius: 16px; }
+.tenant-shell .wl-stat-ic { flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 13px; }
+.tenant-shell .wl-stat-ic .material-symbols-outlined { font-size: 24px; }
+.tenant-shell .wl-stat-ic.free { background: #ece9ff; color: var(--m-primary); }
+.tenant-shell .wl-stat-ic.use { background: #ffe9cf; color: #b45309; }
+.tenant-shell .wl-stat-ic.rsv { background: #ffe0e0; color: #d13b3b; }
+.tenant-shell .wl-stat-ic.wait { background: #eceef0; color: #5b6472; }
+.tenant-shell .wl-stat-ic.ok { background: #dcfce7; color: #15803d; }
+.tenant-shell .wl-stat-txt { display: flex; flex-direction: column; min-width: 0; }
+.tenant-shell .wl-stat-label { font-size: 13px; color: var(--m-secondary); font-weight: 600; }
+.tenant-shell .wl-stat-num { font-size: 26px; font-weight: 800; color: var(--m-on-surface); font-family: 'Hanken Grotesk', sans-serif; line-height: 1.1; }
 
-.tenant-shell .wl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
-.tenant-shell .wl-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; }
-.tenant-shell .wl-card.called { border: 1px solid var(--m-primary); background: linear-gradient(0deg, #f2f0ff, #f2f0ff), var(--m-surface-lowest); }
-.tenant-shell .wl-no { flex: none; width: 54px; height: 54px; border-radius: 14px; display: grid; place-items: center; background: var(--m-primary); color: #fff; font-size: 24px; font-weight: 800; }
-.tenant-shell .wl-card.called .wl-no { background: #6b46ff; }
-.tenant-shell .wl-info { flex: 1; min-width: 0; }
-.tenant-shell .wl-name { font-size: 15.5px; font-weight: 800; color: var(--m-on-surface); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.tenant-shell .wl-size { display: inline-flex; align-items: center; gap: 3px; font-size: 12.5px; font-weight: 600; color: var(--m-secondary); }
-.tenant-shell .wl-size .material-symbols-outlined { font-size: 16px; }
-.tenant-shell .wl-called { padding: 2px 8px; border-radius: 999px; background: #ece9ff; color: var(--m-primary); font-size: 11.5px; font-weight: 700; }
-.tenant-shell .wl-sub { display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--m-secondary); margin-top: 3px; }
-.tenant-shell .wl-sub .material-symbols-outlined { font-size: 15px; }
-.tenant-shell .wl-memo { color: var(--m-on-surface-variant); }
-.tenant-shell .wl-actions { flex: none; display: flex; flex-direction: column; gap: 6px; }
-@media (max-width: 520px) {
-  .tenant-shell .wl-status { flex-direction: column; align-items: flex-start; }
-  .tenant-shell .wl-card { flex-wrap: wrap; }
-  .tenant-shell .wl-actions { flex-direction: row; width: 100%; }
+/* 섹션 헤더(아이콘 + 구분선 + 액션) */
+.tenant-shell .wl-section { margin-top: 26px; }
+.tenant-shell .wl-shead { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--m-outline-variant); }
+.tenant-shell .wl-shead h2 { display: flex; align-items: center; gap: 8px; font-size: 19px; font-weight: 800; margin: 0; color: var(--m-primary); }
+.tenant-shell .wl-shead h2 .material-symbols-outlined { font-size: 22px; }
+
+.tenant-shell .wl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+
+/* 예약 카드 */
+.tenant-shell .wl-rcard { display: flex; flex-direction: column; border: 1px solid var(--m-outline-variant); border-radius: 16px; background: var(--m-surface-lowest); overflow: hidden; }
+.tenant-shell .wl-rcard-top { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; background: var(--m-surface-low); border-bottom: 1px solid var(--m-outline-variant); }
+.tenant-shell .wl-rcard-badge { font-size: 12px; font-weight: 700; color: var(--m-primary); background: #ece9ff; padding: 4px 10px; border-radius: 999px; }
+.tenant-shell .wl-rcard-time { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--m-secondary); }
+.tenant-shell .wl-rcard-time .material-symbols-outlined { font-size: 16px; }
+.tenant-shell .wl-rcard-name { font-size: 18px; font-weight: 800; color: var(--m-on-surface); padding: 14px 16px 2px; }
+.tenant-shell .wl-rcard-meta { font-size: 13.5px; color: var(--m-secondary); font-weight: 600; padding: 0 16px 14px; }
+
+/* 대기표 카드 */
+.tenant-shell .wl-wcard { position: relative; display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--m-outline-variant); border-radius: 16px; background: var(--m-surface-lowest); overflow: hidden; }
+.tenant-shell .wl-wcard.called { border-color: var(--m-primary); background: linear-gradient(0deg, #f4f2ff, #f4f2ff), var(--m-surface-lowest); }
+.tenant-shell .wl-wcard::after { content: ''; position: absolute; top: -18px; right: -18px; width: 60px; height: 60px; border-radius: 50%; background: #f0eefe; }
+.tenant-shell .wl-wcard-top { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; }
+.tenant-shell .wl-wcard-no { flex: none; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--m-primary); color: #fff; font-size: 20px; font-weight: 800; font-family: 'Hanken Grotesk', sans-serif; }
+.tenant-shell .wl-wcard-id { min-width: 0; }
+.tenant-shell .wl-wcard-name { font-size: 16px; font-weight: 800; color: var(--m-on-surface); display: flex; align-items: center; gap: 8px; }
+.tenant-shell .wl-wcard-phone { font-size: 13px; color: var(--m-secondary); margin-top: 2px; }
+.tenant-shell .wl-wcard-meta { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--m-secondary); font-weight: 600; }
+.tenant-shell .wl-wcard-meta span { display: inline-flex; align-items: center; gap: 5px; }
+.tenant-shell .wl-wcard-meta .material-symbols-outlined { font-size: 16px; }
+.tenant-shell .wl-called { padding: 2px 8px; border-radius: 999px; background: var(--m-primary); color: #fff; font-size: 11px; font-weight: 700; }
+
+/* 카드 버튼 */
+.tenant-shell .wl-cbtns { display: flex; gap: 8px; padding: 0 16px 16px; }
+.tenant-shell .wl-wcard .wl-cbtns { padding: 0; }
+.tenant-shell .wl-btn-seat, .tenant-shell .wl-btn-cancel, .tenant-shell .wl-btn-call { border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; padding: 10px 0; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+.tenant-shell .wl-btn-seat { flex: 1; background: var(--m-primary); color: #fff; border: 0; }
+.tenant-shell .wl-btn-cancel { flex: 1; background: var(--m-surface-lowest); color: #d13b3b; border: 1px solid var(--m-outline-variant); }
+.tenant-shell .wl-btn-call { position: relative; z-index: 1; width: 100%; background: var(--m-surface-lowest); color: #b45309; border: 1px solid #e6b98f; }
+.tenant-shell .wl-btn-call .material-symbols-outlined { font-size: 18px; }
+
+@media (max-width: 820px) {
+  .tenant-shell .wl-stats { grid-template-columns: 1fr 1fr; }
+  .tenant-shell .wl-grid { grid-template-columns: 1fr 1fr; }
+  /* 테이블 관리 통계 — 아이콘 없는 컴팩트 칩 한 줄(줄바꿈) */
+  .tenant-shell .tbl-stats { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tenant-shell .tbl-stats .wl-stat { flex: 1 1 40%; min-width: 0; gap: 8px; padding: 10px 12px; border-radius: 12px; }
+  .tenant-shell .tbl-stats .wl-stat-ic { display: none; }
+  .tenant-shell .tbl-stats .wl-stat-txt { flex-direction: row; align-items: baseline; gap: 6px; }
+  .tenant-shell .tbl-stats .wl-stat-label { font-size: 12px; }
+  .tenant-shell .tbl-stats .wl-stat-num { font-size: 17px; }
 }
-
-/* 예약·대기 — 섹션/예약카드 (사장님 콘솔) */
-.tenant-shell .wl-section { margin-top: 22px; }
-.tenant-shell .wl-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.tenant-shell .wl-section-head h2 { display: flex; align-items: center; gap: 7px; font-size: 16px; font-weight: 800; margin: 0; color: var(--m-text, #1c1b1f); }
-.tenant-shell .wl-section-head h2 .material-symbols-rounded { font-size: 20px; color: var(--m-primary, #4b3bd6); }
-.tenant-shell .wl-card-rsv { align-items: flex-start; }
-.tenant-shell .wl-rsv-time { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 84px; padding: 8px 10px; border-radius: 12px; background: #efeafe; color: #4b3bd6; font-weight: 800; }
-.tenant-shell .wl-rsv-time .material-symbols-rounded { font-size: 20px; }
-.tenant-shell .wl-rsv-time span { font-size: 14px; white-space: nowrap; }
+@media (max-width: 520px) {
+  .tenant-shell .wl-grid { grid-template-columns: 1fr; }
+}
 .tenant-shell .field .req { color: #c0343a; }
 
 /* 주문 목록 — 날짜 이동/페이징 바 */

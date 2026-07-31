@@ -53,6 +53,118 @@ function sizeForSeats(seats, kind) {
 const CANVAS_W = 760
 const CANVAS_H = 460
 
+// 모바일 전용 바텀시트 — 테이블을 탭하면 뜬다(데스크톱은 우측 패널). 초안(draft)을 편집하고 [적용하기]로 반영.
+function MobileTableSheet({ table, onApply, onCancel, onDuplicate, onDelete, onQr }) {
+  const [label, setLabel] = useState(table.label || '')
+  const [seats, setSeats] = useState(table.seats || 1)
+  const [kind, setKind] = useState(table.kind || 'TABLE')
+  const [rotation, setRotation] = useState(table.rotation || 0)
+  const [active, setActive] = useState(table.active !== false)
+  const title = (label && label.trim()) ? `${label} 테이블` : (kind === 'ROOM' ? '룸' : '테이블')
+  const clampSeats = (v) => Math.max(1, Math.min(99, v || 1))
+  return (
+    <div className="tsheet-backdrop" onMouseDown={onCancel}>
+      <div className="tsheet" onMouseDown={(e) => e.stopPropagation()}>
+        <span className="tsheet-grip" />
+        <div className="tsheet-head">
+          <div className="tsheet-titles">
+            <h3>{title}</h3>
+            <p>테이블 속성을 변경합니다.</p>
+          </div>
+          {onQr && (
+            <button type="button" className="tsheet-qr" onClick={onQr} aria-label="QR 코드 보기">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M14 21h.01M21 17v4h-4"/></svg>
+            </button>
+          )}
+        </div>
+
+        <label className="tsheet-field">
+          <span className="tsheet-flabel">테이블 이름</span>
+          <input className="tsheet-input" value={label} onChange={(e) => setLabel(e.target.value)}
+                 placeholder={kind === 'ROOM' ? '예: 룸A' : '예: 7번'} maxLength={30} />
+        </label>
+
+        <div className="tsheet-row2">
+          <div className="tsheet-field">
+            <span className="tsheet-flabel">수용 인원</span>
+            <div className="tsheet-stepper">
+              <button type="button" onClick={() => setSeats((s) => clampSeats(s - 1))} aria-label="인원 감소">－</button>
+              <span className="tsheet-stepval">{seats}인석</span>
+              <button type="button" onClick={() => setSeats((s) => clampSeats(s + 1))} aria-label="인원 증가">＋</button>
+            </div>
+          </div>
+          <div className="tsheet-field">
+            <span className="tsheet-flabel">회전 각도</span>
+            <div className="tsheet-rot">
+              <input type="number" step="15" value={rotation}
+                     onChange={(e) => setRotation(((Number(e.target.value) || 0) % 360 + 360) % 360)} />
+              <span className="tsheet-unit">°</span>
+              <button type="button" className="tsheet-rot-reset" onClick={() => setRotation(0)} aria-label="회전 초기화">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" className={`tsheet-switch${kind === 'ROOM' ? ' on' : ''}`} role="switch" aria-checked={kind === 'ROOM'}
+                onClick={() => setKind((k) => (k === 'ROOM' ? 'TABLE' : 'ROOM'))}>
+          <span className="tsheet-sw-ic">◇</span>
+          <span className="tsheet-sw-txt">룸으로 지정</span>
+          <span className="tsheet-sw-knob" />
+        </button>
+
+        <button type="button" className={`tsheet-switch${active ? ' on' : ''}`} role="switch" aria-checked={active}
+                onClick={() => setActive((v) => !v)}>
+          <span className="tsheet-sw-ic">✔</span>
+          <span className="tsheet-sw-txt">테이블 사용 가능</span>
+          <span className="tsheet-sw-knob" />
+        </button>
+
+        <div className="tsheet-actions">
+          <button type="button" className="tsheet-abtn" onClick={onDuplicate}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            복제하기
+          </button>
+          <button type="button" className="tsheet-abtn del" onClick={onDelete}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            삭제하기
+          </button>
+        </div>
+
+        <div className="tsheet-foot">
+          <button type="button" className="tsheet-cancel" onClick={onCancel}>취소</button>
+          <button type="button" className="tsheet-apply" onClick={() => onApply({ label, seats, kind, rotation, active })}>적용하기</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// 속성 패널의 QR 썸네일 — 선택 테이블이 바뀔 때마다 이미지를 다시 불러온다.
+function QrThumb({ table, loadTableQr }) {
+  const [src, setSrc] = useState(null)
+  useEffect(() => {
+    let url
+    let alive = true
+    setSrc(null)
+    loadTableQr(table)
+      .then((u) => { if (alive) { url = u; setSrc(u) } })
+      .catch(() => {})
+    return () => { alive = false; if (url) URL.revokeObjectURL(url) }
+  }, [table.tableId]) // eslint-disable-line react-hooks/exhaustive-deps
+  const name = table.label || (table.kind === 'ROOM' ? '룸' : '테이블')
+  return (
+    <div className="lts-qr-box">
+      {src
+        ? <img src={src} alt={`${name} 주문 QR`} />
+        : <span className="lts-qr-loading">불러오는 중…</span>}
+      {src && (
+        <a className="lts-qr-dl" href={src} download={`qr-${table.label || table.tableId}.png`}>PNG 저장</a>
+      )}
+    </div>
+  )
+}
+
 /**
  * 영업장 테이블 배치 편집기 — 층 탭 + 픽셀 캔버스에 테이블/룸을 드래그 배치.
  * 관리자 콘솔·업체 콘솔 양쪽에서 같은 컴포넌트를 쓴다. API 호출만 props 로 주입한다.
@@ -72,9 +184,13 @@ const TableLayoutEditor = forwardRef(function TableLayoutEditor({
   loadLayout, onSave, loadTableQr, loadTakeoutQr, loadSeatOptions,
   title = '영업장 테이블 배치', subtitle,
   embedded = false, hideActions = false, onClose, onSaved, onError,
+  externalPackaging = false, packagingMode,
 }, ref) {
-  const [takeout, setTakeout] = useState(false)
-  const [takeoutEnabled, setTakeoutEnabled] = useState(false)
+  // 포장 설정을 바깥(페이지의 별도 섹션)에서 제어하면 편집기 안의 토글은 감춘다.
+  const [takeoutState, setTakeoutState] = useState(false)
+  const [takeoutEnabledState, setTakeoutEnabledState] = useState(false)
+  const takeout = externalPackaging ? packagingMode === 'only' : takeoutState
+  const takeoutEnabled = externalPackaging ? (packagingMode === 'available' || packagingMode === 'only') : takeoutEnabledState
   const [takeoutQrOpen, setTakeoutQrOpen] = useState(false)
   const [floorCount, setFloorCount] = useState(1)
   const [floor, setFloor] = useState(1)
@@ -101,8 +217,8 @@ const TableLayoutEditor = forwardRef(function TableLayoutEditor({
   useEffect(() => {
     loadLayout()
       .then((l) => {
-        setTakeout(l.takeoutOnly)
-        setTakeoutEnabled(!!l.takeoutEnabled)
+        setTakeoutState(l.takeoutOnly)
+        setTakeoutEnabledState(!!l.takeoutEnabled)
         setFloorCount(Math.max(1, l.floorCount || 1))
         setCanvasW(l.canvasW || CANVAS_W)
         setCanvasH(l.canvasH || CANVAS_H)
@@ -131,8 +247,28 @@ const TableLayoutEditor = forwardRef(function TableLayoutEditor({
     const x = Math.min(20 + (n % 6) * 30, canvasW - w - 10)
     const y = Math.min(20 + Math.floor(n / 6) * 30, canvasH - h - 10)
     const code = (window.crypto?.randomUUID?.() ?? `t${Date.now()}${key}`)
-    setTables((prev) => [...prev, { key, code, floorNo: floor, label: '', seats: addSeats, kind: addKind, x, y, width: w, height: h }])
+    setTables((prev) => [...prev, { key, code, floorNo: floor, label: '', seats: addSeats, kind: addKind, x, y, width: w, height: h, rotation: 0, active: true }])
     setSelKeys(new Set([key]))
+  }
+
+  // 선택 테이블 복제 — 새 code(새 QR)로, 살짝 옆에 놓고 곧바로 선택한다.
+  function duplicateSel() {
+    if (!selected) return
+    const key = `new${seqRef.current++}`
+    const code = (window.crypto?.randomUUID?.() ?? `t${key}`)
+    const x = Math.min(selected.x + 24, canvasW - selected.width - 6)
+    const y = Math.min(selected.y + 24, canvasH - selected.height - 6)
+    setTables((prev) => [...prev, {
+      ...selected, key, code, tableId: undefined, x, y,
+    }])
+    setSelKeys(new Set([key]))
+  }
+
+  // 수용 인원 변경(스텝퍼) — 유형에 맞는 기본 크기로 함께 조정한다.
+  function changeSeats(v) {
+    const seats = Math.max(1, Math.min(99, v || 1))
+    const [w, h] = sizeForSeats(seats, selected?.kind)
+    updateSel({ seats, width: w, height: h })
   }
 
   function updateSel(patch) {
@@ -328,7 +464,7 @@ const TableLayoutEditor = forwardRef(function TableLayoutEditor({
         canvasH,
         tables: takeout ? [] : tables.map((t) => ({
           code: t.code, floorNo: t.floorNo, label: t.label, seats: t.seats, kind: t.kind,
-          x: t.x, y: t.y, width: t.width, height: t.height,
+          x: t.x, y: t.y, width: t.width, height: t.height, rotation: t.rotation || 0, active: t.active !== false,
         })),
       }
       const result = await onSave(body)
@@ -355,36 +491,38 @@ const TableLayoutEditor = forwardRef(function TableLayoutEditor({
         </div>
       )}
 
-      <div className="pk-block">
-        <div className="pk-toggle" role="tablist" aria-label="포장 주문 설정">
-          {PK_MODES.map((m) => {
-            const on = (takeout ? 'only' : (takeoutEnabled ? 'available' : 'none')) === m.key
-            return (
-              <button
-                key={m.key}
-                type="button"
-                role="tab"
-                aria-selected={on}
-                className={`pk-node${on ? ' on' : ''}`}
-                style={{ '--dot': m.color }}
-                onClick={() => {
-                  setTakeout(m.key === 'only')
-                  setTakeoutEnabled(m.key === 'available' || m.key === 'only')
-                }}
-              >
-                <span className="pk-dot" />
-                <span className="pk-label">{m.label}</span>
-              </button>
-            )
-          })}
-        </div>
-        {(takeoutEnabled || takeout) && loadTakeoutQr && (
-          <div className="layout-takeout-qr">
-            <button type="button" className="btn-ghost btn-sm" onClick={() => setTakeoutQrOpen(true)}>포장 QR 보기</button>
-            <span className="hint">저장해야 적용됩니다. ‘포장불가’로 저장하면 손님 포장 주문이 정지됩니다.</span>
+      {!externalPackaging && (
+        <div className="pk-block">
+          <div className="pk-toggle" role="tablist" aria-label="포장 주문 설정">
+            {PK_MODES.map((m) => {
+              const on = (takeout ? 'only' : (takeoutEnabled ? 'available' : 'none')) === m.key
+              return (
+                <button
+                  key={m.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={on}
+                  className={`pk-node${on ? ' on' : ''}`}
+                  style={{ '--dot': m.color }}
+                  onClick={() => {
+                    setTakeoutState(m.key === 'only')
+                    setTakeoutEnabledState(m.key === 'available' || m.key === 'only')
+                  }}
+                >
+                  <span className="pk-dot" />
+                  <span className="pk-label">{m.label}</span>
+                </button>
+              )
+            })}
           </div>
-        )}
-      </div>
+          {(takeoutEnabled || takeout) && loadTakeoutQr && (
+            <div className="layout-takeout-qr">
+              <button type="button" className="btn-ghost btn-sm" onClick={() => setTakeoutQrOpen(true)}>포장 QR 보기</button>
+              <span className="hint">저장해야 적용됩니다. ‘포장불가’로 저장하면 손님 포장 주문이 정지됩니다.</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {takeout ? (
         <p className="layout-takeout-msg">포장 전문점으로 설정되어 테이블 배치를 입력하지 않습니다.</p>
@@ -392,116 +530,248 @@ const TableLayoutEditor = forwardRef(function TableLayoutEditor({
         <Loading label="배치도를 불러오는 중…" />
       ) : (
         <>
-          <div className="floor-tabs">
-            {Array.from({ length: floorCount }, (_, i) => i + 1).map((f) => (
-              <button
-                key={f}
-                type="button"
-                className={`floor-tab${floor === f ? ' on' : ''}`}
-                onClick={() => { setFloor(f); setSelKeys(new Set()) }}
-              >
-                {f}층
-              </button>
-            ))}
-            <button type="button" className="floor-tab add" onClick={addFloor} title="층 추가">+ 층</button>
-            {floorCount > 1 && (
-              <button type="button" className="floor-tab del" onClick={removeFloor} title="맨 위 층 삭제">− 층</button>
-            )}
-          </div>
-
-          <div className="layout-toolbar">
-            <div className="lt-group">
-              <span className="lt-glabel">추가</span>
-              <select value={addKind} onChange={(e) => setAddKind(e.target.value)}>
-                <option value="TABLE">테이블</option>
-                <option value="ROOM">룸</option>
-              </select>
-              <SeatSelect value={addSeats} options={seatOptions} onChange={setAddSeats} />
-              <button type="button" className="btn-primary btn-sm" onClick={addTable}>＋ 추가</button>
-            </div>
-
-            <div className="lt-group">
-              <span className="lt-glabel">영업장</span>
-              <button type="button" className="szbtn" title="줄이기" onClick={() => resizeCanvasBy(-120, -80)}>－</button>
-              <span className="lt-size-val">{canvasW}×{canvasH}</span>
-              <button type="button" className="szbtn" title="넓히기" onClick={() => resizeCanvasBy(120, 80)}>＋</button>
-            </div>
-
-            <div className="lt-group">
-              <span className="lt-glabel">보기</span>
-              <button type="button" className="btn-ghost btn-sm" onClick={fitToView}>전체보기</button>
-              <button type="button" className="btn-ghost btn-sm" onClick={() => setZoom(1)}>100%</button>
-              <span className="lt-size-val">{Math.round(zoom * 100)}%</span>
-            </div>
-
-            {selected && (
-              <div className="lt-group lt-sel">
-                <span className="lt-glabel">선택</span>
-                <input
-                  className="layout-label-input"
-                  value={selected.label}
-                  onChange={(e) => updateSel({ label: e.target.value })}
-                  placeholder="이름(선택)"
-                  maxLength={30}
-                />
-                <SeatSelect
-                  value={selected.seats}
-                  options={seatOptions}
-                  onChange={(v) => {
-                    const [w, h] = sizeForSeats(v, selected.kind)
-                    updateSel({ seats: v, width: w, height: h })
-                  }}
-                />
-                {selected.tableId
-                  ? <button type="button" className="btn-ghost btn-sm" onClick={() => setQrTable(selected)}>QR</button>
-                  : <span className="lt-qr-hint" title="저장하면 QR이 생성됩니다">QR(저장 후)</span>}
-                <button type="button" className="btn-danger btn-sm" onClick={deleteSel}>삭제</button>
-              </div>
-            )}
-          </div>
-
-          <div className="layout-canvas-wrap" ref={wrapRef}>
-            <div className="layout-canvas-scale" style={{ width: canvasW * zoom, height: canvasH * zoom }}>
-              <div
-                ref={canvasRef}
-                className="layout-canvas"
-                style={{ width: canvasW, height: canvasH, transform: `scale(${zoom})`, transformOrigin: 'top left' }}
-                onMouseDown={onCanvasMouseDown}
-                onContextMenu={(e) => {
-                  if (selKeys.size >= 2) { e.preventDefault(); setAlignMenu({ x: e.clientX, y: e.clientY }) }
-                }}
-              >
-                {onFloor.map((t) => (
-                  <div
-                    key={t.key}
-                    className={`layout-table${t.kind === 'ROOM' ? ' room' : ''}${selKeys.has(t.key) ? ' sel' : ''}`}
-                    style={{ left: t.x, top: t.y, width: t.width, height: t.height }}
-                    onMouseDown={(e) => startDrag(e, t)}
+          <div className="layout-2col">
+            <div className="layout-main">
+              {/* 모바일 전용 — 픽셀 캔버스 대신 층 선택 + 테이블 카드 그리드 (데스크톱에선 CSS로 숨김) */}
+              <div className="lt-mgrid">
+                <div className="lt-mgrid-bar">
+                  <select
+                    className="lt-mgrid-floor"
+                    value={floor}
+                    onChange={(e) => {
+                      if (e.target.value === '__add') { addFloor(); return }
+                      setFloor(Number(e.target.value)); setSelKeys(new Set())
+                    }}
                   >
-                    <span className="lt-label">{t.label || (t.kind === 'ROOM' ? '룸' : `T`)}</span>
-                    <span className="lt-seats">{t.seats}인</span>
-                  </div>
-                ))}
-                {marquee && (
-                  <div className="layout-marquee"
-                       style={{ left: marquee.x, top: marquee.y, width: marquee.w, height: marquee.h }} />
-                )}
-                {onFloor.length === 0 && (
-                  <div className="layout-empty">
-                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
-                      <path d="M3 9h18M9 3v18" />
-                    </svg>
-                    <p className="le-title">이 층에 테이블이 없습니다</p>
-                    <p className="le-sub">위 “＋ 추가”로 테이블·룸을 놓아보세요</p>
-                  </div>
-                )}
-                <div className="layout-resize" title="끌어서 영업장 크기 조절" onMouseDown={startResizeCanvas} />
+                    {Array.from({ length: floorCount }, (_, i) => i + 1).map((f) => (
+                      <option key={f} value={f}>{f}층</option>
+                    ))}
+                    <option value="__add">＋ 층 추가</option>
+                  </select>
+                  <button type="button" className="lt-mgrid-add" onClick={addTable} aria-label="테이블 추가">＋</button>
+                </div>
+                <div className="lt-mgrid-cards">
+                  {onFloor.map((t) => (
+                    <button
+                      type="button"
+                      key={t.key}
+                      className={`lt-mcard${selKeys.has(t.key) ? ' sel' : ''}${t.active === false ? ' off' : ''}`}
+                      onClick={() => setSelKeys(new Set([t.key]))}
+                    >
+                      {selKeys.has(t.key) && <span className="lt-mcard-badge">SELECTED</span>}
+                      <span className="lt-mcard-name">{t.label || (t.kind === 'ROOM' ? '룸' : '테이블')}</span>
+                      <span className="lt-mcard-sub">{t.seats}인석{t.kind === 'ROOM' ? ' · 룸' : ''}</span>
+                      {t.active === false && <span className="lt-mcard-off">사용중지</span>}
+                    </button>
+                  ))}
+                  {onFloor.length === 0 && (
+                    <div className="lt-mgrid-empty">이 층에 테이블이 없습니다.<br />오른쪽 위 <b>＋</b> 로 추가하세요.</div>
+                  )}
+                </div>
               </div>
+
+              <div className="floor-tabs">
+                {Array.from({ length: floorCount }, (_, i) => i + 1).map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    className={`floor-tab${floor === f ? ' on' : ''}`}
+                    onClick={() => { setFloor(f); setSelKeys(new Set()) }}
+                  >
+                    {f}층
+                  </button>
+                ))}
+                <button type="button" className="floor-tab add" onClick={addFloor} title="층 추가">+ 층</button>
+                {floorCount > 1 && (
+                  <button type="button" className="floor-tab del" onClick={removeFloor} title="맨 위 층 삭제">− 층</button>
+                )}
+              </div>
+
+              <div className="layout-toolbar">
+                <div className="lt-group">
+                  <span className="lt-glabel">추가</span>
+                  <select value={addKind} onChange={(e) => setAddKind(e.target.value)}>
+                    <option value="TABLE">테이블</option>
+                    <option value="ROOM">룸</option>
+                  </select>
+                  <SeatSelect value={addSeats} options={seatOptions} onChange={setAddSeats} />
+                  <button type="button" className="btn-primary btn-sm" onClick={addTable}>＋ 추가</button>
+                </div>
+
+                <div className="lt-group">
+                  <span className="lt-glabel">영업장</span>
+                  <button type="button" className="szbtn" title="줄이기" onClick={() => resizeCanvasBy(-120, -80)}>－</button>
+                  <span className="lt-size-val">{canvasW}×{canvasH}</span>
+                  <button type="button" className="szbtn" title="넓히기" onClick={() => resizeCanvasBy(120, 80)}>＋</button>
+                </div>
+
+                <div className="lt-group">
+                  <span className="lt-glabel">보기</span>
+                  <button type="button" className="btn-ghost btn-sm" onClick={fitToView}>전체보기</button>
+                  <button type="button" className="btn-ghost btn-sm" onClick={() => setZoom(1)}>100%</button>
+                  <span className="lt-size-val">{Math.round(zoom * 100)}%</span>
+                </div>
+              </div>
+
+              <div className="layout-canvas-wrap" ref={wrapRef}>
+                <div className="layout-canvas-scale" style={{ width: canvasW * zoom, height: canvasH * zoom }}>
+                  <div
+                    ref={canvasRef}
+                    className="layout-canvas"
+                    style={{ width: canvasW, height: canvasH, transform: `scale(${zoom})`, transformOrigin: 'top left' }}
+                    onMouseDown={onCanvasMouseDown}
+                    onContextMenu={(e) => {
+                      if (selKeys.size >= 2) { e.preventDefault(); setAlignMenu({ x: e.clientX, y: e.clientY }) }
+                    }}
+                  >
+                    {onFloor.map((t) => (
+                      <div
+                        key={t.key}
+                        className={`layout-table${t.kind === 'ROOM' ? ' room' : ''}${selKeys.has(t.key) ? ' sel' : ''}${t.active === false ? ' off' : ''}`}
+                        style={{ left: t.x, top: t.y, width: t.width, height: t.height, transform: t.rotation ? `rotate(${t.rotation}deg)` : undefined }}
+                        onMouseDown={(e) => startDrag(e, t)}
+                      >
+                        <span className="lt-label">{t.label || (t.kind === 'ROOM' ? '룸' : `T`)}</span>
+                        <span className="lt-seats">{t.seats}인</span>
+                        {t.active === false && <span className="lt-off-badge">사용중지</span>}
+                      </div>
+                    ))}
+                    {marquee && (
+                      <div className="layout-marquee"
+                           style={{ left: marquee.x, top: marquee.y, width: marquee.w, height: marquee.h }} />
+                    )}
+                    {onFloor.length === 0 && (
+                      <div className="layout-empty">
+                        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <rect x="3" y="3" width="18" height="18" rx="2" />
+                          <path d="M3 9h18M9 3v18" />
+                        </svg>
+                        <p className="le-title">이 층에 테이블이 없습니다</p>
+                        <p className="le-sub">위 “＋ 추가”로 테이블·룸을 놓아보세요</p>
+                      </div>
+                    )}
+                    <div className="layout-resize" title="끌어서 영업장 크기 조절" onMouseDown={startResizeCanvas} />
+                  </div>
+                </div>
+              </div>
+              <p className="hint left">테이블을 끌어 옮기고, 빈 곳을 끌면 <b>여러 개를 한 번에 선택</b>할 수 있습니다 · 선택 후 <b>우클릭</b>하면 오와열을 반듯하게 맞춥니다 · 우하단 모서리를 끌면 영업장이 넓어집니다.</p>
             </div>
+
+            {/* 우측 속성 패널 — 선택한 테이블의 이름·인원·회전·유형·QR */}
+            <aside className="layout-side">
+              <h3 className="lts-title">테이블 정보</h3>
+              {selected ? (
+                <div className="lts-body">
+                  <label className="lts-field">
+                    <span className="lts-flabel">테이블 이름</span>
+                    <input
+                      className="lts-input"
+                      value={selected.label || ''}
+                      onChange={(e) => updateSel({ label: e.target.value })}
+                      placeholder={selected.kind === 'ROOM' ? '예: 룸A' : '예: 7번'}
+                      maxLength={30}
+                    />
+                  </label>
+
+                  <div className="lts-field">
+                    <span className="lts-flabel">수용 인원</span>
+                    <div className="lts-stepper">
+                      <button type="button" onClick={() => changeSeats(selected.seats - 1)} aria-label="인원 감소">－</button>
+                      <input
+                        type="number" min="1" max="99"
+                        value={selected.seats}
+                        onChange={(e) => changeSeats(Number(e.target.value))}
+                      />
+                      <button type="button" onClick={() => changeSeats(selected.seats + 1)} aria-label="인원 증가">＋</button>
+                    </div>
+                  </div>
+
+                  <div className="lts-row2">
+                    <label className="lts-field">
+                      <span className="lts-flabel">회전</span>
+                      <div className="lts-rot">
+                        <input
+                          type="number" step="15"
+                          value={selected.rotation || 0}
+                          onChange={(e) => updateSel({ rotation: ((Number(e.target.value) || 0) % 360 + 360) % 360 })}
+                        />
+                        <span className="lts-unit">°</span>
+                      </div>
+                    </label>
+                    <label className="lts-field">
+                      <span className="lts-flabel">유형</span>
+                      <select
+                        className="lts-input"
+                        value={selected.kind}
+                        onChange={(e) => {
+                          const kind = e.target.value
+                          const [w, h] = sizeForSeats(selected.seats, kind)
+                          updateSel({ kind, width: w, height: h })
+                        }}
+                      >
+                        <option value="TABLE">일반 테이블</option>
+                        <option value="ROOM">룸</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <button
+                    type="button"
+                    className={`lts-switch${selected.active !== false ? ' on' : ''}`}
+                    role="switch"
+                    aria-checked={selected.active !== false}
+                    onClick={() => updateSel({ active: selected.active === false })}
+                  >
+                    <span className="lts-sw-txt">테이블 사용 가능</span>
+                    <span className="lts-sw-knob" />
+                  </button>
+
+                  <div className="lts-actions">
+                    <button type="button" className="lts-btn dup" onClick={duplicateSel}>복제</button>
+                    <button type="button" className="lts-btn del" onClick={deleteSel}>삭제</button>
+                  </div>
+
+                  <div className="lts-qr">
+                    <div className="lts-qr-head">
+                      <span>QR 코드 미리보기</span>
+                      {selected.tableId && (
+                        <button type="button" className="lts-qr-big" onClick={() => setQrTable(selected)}>크게 보기</button>
+                      )}
+                    </div>
+                    {selected.tableId
+                      ? <QrThumb table={selected} loadTableQr={loadTableQr} />
+                      : <div className="lts-qr-pending">저장하면 이 테이블의<br />주문 QR이 생성됩니다.</div>}
+                  </div>
+                </div>
+              ) : (
+                <div className="lts-empty">
+                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M9 3H4a1 1 0 0 0-1 1v5M15 3h5a1 1 0 0 1 1 1v5M9 21H4a1 1 0 0 1-1-1v-5M15 21h5a1 1 0 0 0 1-1v-5" />
+                  </svg>
+                  <p>테이블을 선택하면<br />이름·인원·유형·QR을 편집할 수 있어요.</p>
+                </div>
+              )}
+            </aside>
           </div>
-          <p className="hint left">테이블을 끌어 옮기고, 빈 곳을 끌면 <b>여러 개를 한 번에 선택</b>할 수 있습니다 · 선택 후 <b>우클릭</b>하면 오와열을 반듯하게 맞춥니다 · 가운데 버튼으로 화면 이동 · 우하단 모서리를 끌면 영업장이 넓어집니다.</p>
+
+          {/* 모바일 전용 바텀시트 (CSS로 데스크톱에선 숨김) */}
+          {selected && (
+            <MobileTableSheet
+              key={selected.key}
+              table={selected}
+              onCancel={() => setSelKeys(new Set())}
+              onApply={(d) => {
+                const [w, h] = sizeForSeats(d.seats, d.kind)
+                updateSel({ label: d.label, seats: d.seats, kind: d.kind, rotation: d.rotation, active: d.active, width: w, height: h })
+                setSelKeys(new Set())
+              }}
+              onDuplicate={duplicateSel}
+              onDelete={deleteSel}
+              onQr={selected.tableId ? () => setQrTable(selected) : null}
+            />
+          )}
         </>
       )}
 
@@ -606,7 +876,7 @@ function TableQrModal({ table, loadQr, onClose, onError }) {
 }
 
 /** 포장 전용 주문 QR 모달 — 매장 입구·픽업대에 붙이는 용도. */
-function TakeoutQrModal({ loadQr, onClose, onError }) {
+export function TakeoutQrModal({ loadQr, onClose, onError }) {
   const [src, setSrc] = useState(null)
   useEffect(() => {
     if (!loadQr) return undefined

@@ -2,9 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import TenantShell from '../../components/TenantShell'
 import Toast from '../../components/Toast'
 import Icon from '../../components/Icon'
-import TableLayoutEditor from '../../components/TableLayoutEditor'
+import TableLayoutEditor, { TakeoutQrModal } from '../../components/TableLayoutEditor'
 import Loading from '../../components/Loading'
 import { tenantTableApi } from '../../api/tenantClient'
+
+// 포장 주문 3단(포장불가 / 포장가능 / 포장전문).
+const PK_MODES = [
+  { key: 'none', label: '포장불가', color: '#8b8b9a', desc: '손님 포장 주문을 받지 않습니다.' },
+  { key: 'available', label: '포장가능', color: '#22c55e', desc: '홀 + 포장 주문을 함께 받습니다.' },
+  { key: 'only', label: '포장전문', color: '#3525cd', desc: '포장 전문점 — 테이블 배치 없이 포장만 받습니다.' },
+]
 
 // 사장님 콘솔 테이블 관리 — Material 3(인디고). 상단 저장 + [자리 배치 | 테이블 QR] 탭.
 export default function TenantTablesPage() {
@@ -13,11 +20,16 @@ export default function TenantTablesPage() {
   const [saving, setSaving] = useState(false)
   const [tab, setTab] = useState('layout') // 'layout' | 'qr'
   const [reloadKey, setReloadKey] = useState(0) // 새로고침 시 편집기를 다시 마운트한다
+  const [packagingMode, setPackagingMode] = useState('none') // 포장 섹션이 편집기의 포장 상태를 제어한다
+  const [takeoutQrOpen, setTakeoutQrOpen] = useState(false)
   const editorRef = useRef(null)
 
   const reloadInfo = useCallback(() => {
     tenantTableApi.layout()
-      .then((l) => setLayout(l))
+      .then((l) => {
+        setLayout(l)
+        setPackagingMode(l.takeoutOnly ? 'only' : l.takeoutEnabled ? 'available' : 'none')
+      })
       .catch((e) => { setError(e.message); setLayout({ tables: [], floorCount: 1 }) })
   }, [])
   useEffect(() => { reloadInfo() }, [reloadInfo])
@@ -44,12 +56,13 @@ export default function TenantTablesPage() {
     const count = tables.length
     const rooms = tables.filter((t) => t.kind === 'ROOM').length
     const avg = count ? tables.reduce((s, t) => s + (t.seats || 0), 0) / count : 0
-    return { count, rooms, avg: Math.round(avg * 10) / 10, floors: layout?.floorCount || 1 }
+    const takeout = !!(layout?.takeoutEnabled || layout?.takeoutOnly)
+    return { count, rooms, avg: Math.round(avg * 10) / 10, floors: layout?.floorCount || 1, takeout }
   }, [tables, layout])
 
   return (
     <TenantShell>
-      <div className="m-topline">
+      <div className="m-topline m-topline-sticky">
         <div className="m-page-head">
           <h1>테이블 관리</h1>
           <p>가게 자리를 배치하고, 테이블마다 주문용 QR 코드를 생성하세요.</p>
@@ -66,6 +79,26 @@ export default function TenantTablesPage() {
         )}
       </div>
 
+      {/* 통계 4장 */}
+      <div className="wl-stats tbl-stats">
+        <div className="wl-stat">
+          <span className="wl-stat-ic free"><Icon name="table_restaurant" /></span>
+          <div className="wl-stat-txt"><span className="wl-stat-label">총 테이블</span><b className="wl-stat-num">{stats.count}</b></div>
+        </div>
+        <div className="wl-stat">
+          <span className="wl-stat-ic use"><Icon name="layers" /></span>
+          <div className="wl-stat-txt"><span className="wl-stat-label">운영 층수</span><b className="wl-stat-num">{stats.floors}층</b></div>
+        </div>
+        <div className="wl-stat">
+          <span className="wl-stat-ic rsv"><Icon name="groups" /></span>
+          <div className="wl-stat-txt"><span className="wl-stat-label">평균 좌석</span><b className="wl-stat-num">{stats.avg}명</b></div>
+        </div>
+        <div className="wl-stat">
+          <span className="wl-stat-ic ok"><Icon name="takeout_dining" /></span>
+          <div className="wl-stat-txt"><span className="wl-stat-label">포장 상태</span><b className="wl-stat-num">{stats.takeout ? '가능' : '정지'}</b></div>
+        </div>
+      </div>
+
       {/* 탭 */}
       <div className="m-tabs" role="tablist">
         <button role="tab" className={`m-tab${tab === 'layout' ? ' on' : ''}`} onClick={() => setTab('layout')}>
@@ -78,45 +111,67 @@ export default function TenantTablesPage() {
 
       {/* 자리 배치 탭 — 편집기는 계속 마운트해 탭 전환에도 편집이 유지되게 한다 */}
       <div style={{ display: tab === 'layout' ? 'flex' : 'none', flexDirection: 'column', gap: 24 }}>
-        <div className="m-section-head">
-          <span className="m-step">1</span>
-          <div className="m-section-title">
-            <h2>자리 배치</h2>
-            <p>드래그하여 테이블 위치를 조정하고, 저장하면 QR이 갱신됩니다.</p>
+        {/* 포장 주문 설정 — 컴팩트 SaaS 설정 카드(세그먼트 컨트롤) */}
+        <section className="m-card pk-set">
+          <div className="pk-set-top">
+            <h3 className="pk-set-h">포장 주문 설정</h3>
+            {packagingMode !== 'none' && (
+              <button type="button" className="pk-set-qr" onClick={() => setTakeoutQrOpen(true)}>
+                <Icon name="qr_code_2" /> 포장 QR
+              </button>
+            )}
           </div>
-        </div>
+          <div className="pk-seg" role="tablist" aria-label="포장 주문 설정">
+            {PK_MODES.map((m) => {
+              const on = packagingMode === m.key
+              return (
+                <button
+                  key={m.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={on}
+                  className={`pk-seg-btn${on ? ' on' : ''}`}
+                  onClick={() => setPackagingMode(m.key)}
+                >
+                  {m.label}
+                </button>
+              )
+            })}
+          </div>
+          <p className="pk-set-desc">
+            <span className="pk-set-dot" style={{ background: PK_MODES.find((m) => m.key === packagingMode)?.color }} />
+            {PK_MODES.find((m) => m.key === packagingMode)?.desc}
+          </p>
+        </section>
 
-        <div className="m-grid-2">
-          <section className="m-card" style={{ padding: 18 }}>
-            <TableLayoutEditor
-              key={reloadKey}
-              ref={editorRef}
-              embedded
-              hideActions
-              title=""
-              loadLayout={loadLayout}
-              onSave={onSave}
-              loadTableQr={loadTableQr}
-              loadTakeoutQr={loadTakeoutQr}
-              onError={setError}
-              onSaved={reloadInfo}
-            />
-          </section>
+        {packagingMode !== 'only' && (
+          <div className="m-section-head">
+            <span className="m-step">1</span>
+            <div className="m-section-title">
+              <h2>자리 배치</h2>
+              <p>드래그하여 테이블 위치를 조정하고, 저장하면 QR이 갱신됩니다.</p>
+            </div>
+          </div>
+        )}
 
-          <aside className="m-card m-info">
-            <h3><Icon name="insights" /> 매장 정보</h3>
-            <ul className="m-stats">
-              <li><span>총 테이블</span><b>{stats.count}</b></li>
-              <li><span>룸</span><b>{stats.rooms}</b></li>
-              <li><span>평균 좌석</span><b>{stats.avg}명</b></li>
-              <li><span>층수</span><b>{stats.floors}층</b></li>
-            </ul>
-            <button type="button" className="m-btn m-btn-tonal" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setTab('qr')}>
-              <Icon name="qr_code_2" /> QR 코드 보기
-            </button>
-            <p className="m-info-hint">배치를 바꾸면 상단 <b>저장하기</b>를 눌러야 반영됩니다.</p>
-          </aside>
-        </div>
+        {/* 편집기는 항상 한 번만 마운트한다(포장전문이면 스스로 안내 메시지를 띄운다) */}
+        <section className="m-card" style={{ padding: 18 }}>
+          <TableLayoutEditor
+            key={reloadKey}
+            ref={editorRef}
+            embedded
+            hideActions
+            title=""
+            externalPackaging
+            packagingMode={packagingMode}
+            loadLayout={loadLayout}
+            onSave={onSave}
+            loadTableQr={loadTableQr}
+            loadTakeoutQr={loadTakeoutQr}
+            onError={setError}
+            onSaved={reloadInfo}
+          />
+        </section>
       </div>
 
       {/* 테이블 QR 탭 */}
@@ -149,6 +204,10 @@ export default function TenantTablesPage() {
           </div>
         )}
       </div>
+
+      {takeoutQrOpen && (
+        <TakeoutQrModal loadQr={loadTakeoutQr} onClose={() => setTakeoutQrOpen(false)} onError={setError} />
+      )}
 
       <Toast message={error} onClose={() => setError('')} />
     </TenantShell>

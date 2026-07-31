@@ -7,6 +7,15 @@ import { tenantWaitlistApi } from '../../api/tenantClient'
 
 const tlabel = (t) => t.label || (t.kind === 'ROOM' ? '룸' : '테이블')
 function hhmm(dt) { return dt ? dt.slice(11, 16) : '' }
+// 대기표 목록에선 개인정보 보호를 위해 가운데 번호를 가린다. 010-8812-1234 → 010-88**-1234
+function maskPhone(p) {
+  if (!p) return ''
+  const parts = p.split('-')
+  if (parts.length === 3 && parts[1].length >= 2) {
+    return `${parts[0]}-${parts[1].slice(0, 2)}${'*'.repeat(Math.max(2, parts[1].length - 2))}-${parts[2]}`
+  }
+  return p
+}
 function fmtReserved(dt) {
   if (!dt) return ''
   const [d, t] = dt.split('T')
@@ -49,29 +58,31 @@ export default function TenantWaitlistPage() {
         <Loading label="예약·대기 현황을 불러오는 중…" />
       ) : (
         <>
-          {/* 테이블 점유 현황 */}
-          <div className={`m-card wl-status${board.allFull ? ' full' : ''}`}>
-            <div className="wl-status-main">
-              <span className="wl-status-ic"><Icon name={board.allFull ? 'event_busy' : 'event_available'} /></span>
-              <div>
-                <div className="wl-status-title">
-                  {empty ? '등록된 테이블이 없습니다' : board.allFull ? '모든 테이블 사용 중' : `빈 테이블 ${free}개`}
-                </div>
-                <div className="wl-status-sub">
-                  사용 중 {board.occupiedTables} / 전체 {board.totalTables}
-                  <span className="wl-dot">·</span> 예약 {board.reservationCount}건
-                  <span className="wl-dot">·</span> 대기 {board.waitingCount}팀
-                </div>
-              </div>
+          {/* 통계 4장 */}
+          <div className="wl-stats">
+            <div className="wl-stat">
+              <span className="wl-stat-ic free"><Icon name="table_restaurant" /></span>
+              <div className="wl-stat-txt"><span className="wl-stat-label">빈 테이블</span><b className="wl-stat-num">{Math.max(0, free)}</b></div>
             </div>
-            {board.allFull && <span className="wl-badge">만석 — 대기표 발급</span>}
+            <div className="wl-stat">
+              <span className="wl-stat-ic use"><Icon name="person" /></span>
+              <div className="wl-stat-txt"><span className="wl-stat-label">사용 중</span><b className="wl-stat-num">{board.occupiedTables}</b></div>
+            </div>
+            <div className="wl-stat">
+              <span className="wl-stat-ic rsv"><Icon name="event" /></span>
+              <div className="wl-stat-txt"><span className="wl-stat-label">예약 건수</span><b className="wl-stat-num">{board.reservationCount}</b></div>
+            </div>
+            <div className="wl-stat">
+              <span className="wl-stat-ic wait"><Icon name="schedule" /></span>
+              <div className="wl-stat-txt"><span className="wl-stat-label">대기 팀</span><b className="wl-stat-num">{board.waitingCount}</b></div>
+            </div>
           </div>
 
           {/* 예약 */}
           <section className="wl-section">
-            <div className="wl-section-head">
-              <h2><Icon name="event" /> 예약</h2>
-              <button className="m-btn m-btn-primary" onClick={() => setAdding('RESERVATION')}>
+            <div className="wl-shead">
+              <h2><Icon name="event_available" /> 예약</h2>
+              <button className="m-btn m-btn-primary btn-sm" onClick={() => setAdding('RESERVATION')}>
                 <Icon name="add" /> 예약 추가
               </button>
             </div>
@@ -80,23 +91,18 @@ export default function TenantWaitlistPage() {
             ) : (
               <div className="wl-grid">
                 {board.reservations.map((e) => (
-                  <div key={e.id} className="m-card wl-card wl-card-rsv">
-                    <div className="wl-rsv-time">
-                      <Icon name="schedule" />
-                      <span>{fmtReserved(e.reservedAt)}</span>
+                  <div key={e.id} className="wl-rcard">
+                    <div className="wl-rcard-top">
+                      <span className="wl-rcard-badge">예약중</span>
+                      <span className="wl-rcard-time"><Icon name="schedule" />{hhmm(e.reservedAt)}</span>
                     </div>
-                    <div className="wl-info">
-                      <div className="wl-name">
-                        {e.partyName || '손님'}
-                        <span className="wl-size"><Icon name="group" />{e.partySize}명</span>
-                      </div>
-                      {e.tableLabel && <div className="wl-sub"><Icon name="table_restaurant" />{e.tableLabel}{e.floorNo ? ` · ${e.floorNo}층` : ''}</div>}
-                      <div className="wl-sub"><Icon name="call" />{e.phone}</div>
-                      {e.memo && <div className="wl-sub wl-memo"><Icon name="sticky_note_2" />{e.memo}</div>}
+                    <div className="wl-rcard-name">{e.partyName || '손님'}</div>
+                    <div className="wl-rcard-meta">
+                      {[[e.floorNo ? `${e.floorNo}층` : null, e.tableLabel].filter(Boolean).join(' '), `${e.partySize}명`].filter(Boolean).join(' · ')}
                     </div>
-                    <div className="wl-actions">
-                      <button className="btn-primary btn-sm" onClick={() => seat(e.id)}><Icon name="check" /> 착석</button>
-                      <button className="btn-danger btn-sm" onClick={() => cancel(e.id)}>취소</button>
+                    <div className="wl-cbtns">
+                      <button className="wl-btn-seat" onClick={() => seat(e.id)}>착석</button>
+                      <button className="wl-btn-cancel" onClick={() => cancel(e.id)}>취소</button>
                     </div>
                   </div>
                 ))}
@@ -106,10 +112,10 @@ export default function TenantWaitlistPage() {
 
           {/* 대기표 */}
           <section className="wl-section">
-            <div className="wl-section-head">
+            <div className="wl-shead">
               <h2><Icon name="confirmation_number" /> 대기표</h2>
-              <button className={`m-btn ${board.allFull ? 'm-btn-primary' : 'm-btn-ghost'}`} onClick={() => setAdding('WAITING')}>
-                <Icon name="add" /> 대기표 발급
+              <button className={`m-btn ${board.allFull ? 'm-btn-primary' : 'm-btn-outline2'} btn-sm`} onClick={() => setAdding('WAITING')}>
+                <Icon name="receipt_long" /> 대기표 발급
               </button>
             </div>
             {board.waiting.length === 0 ? (
@@ -117,22 +123,24 @@ export default function TenantWaitlistPage() {
             ) : (
               <div className="wl-grid">
                 {board.waiting.map((e) => (
-                  <div key={e.id} className={`m-card wl-card${e.status === 'CALLED' ? ' called' : ''}`}>
-                    <div className="wl-no">{e.queueNo}</div>
-                    <div className="wl-info">
-                      <div className="wl-name">
-                        {e.partyName || '손님'}
-                        <span className="wl-size"><Icon name="group" />{e.partySize}명</span>
-                        {e.status === 'CALLED' && <span className="wl-called">호출됨</span>}
+                  <div key={e.id} className={`wl-wcard${e.status === 'CALLED' ? ' called' : ''}`}>
+                    <div className="wl-wcard-top">
+                      <span className="wl-wcard-no">{e.queueNo}</span>
+                      <div className="wl-wcard-id">
+                        <div className="wl-wcard-name">{e.partyName || '손님'}{e.status === 'CALLED' && <span className="wl-called">호출됨</span>}</div>
+                        {e.phone && <div className="wl-wcard-phone">{maskPhone(e.phone)}</div>}
                       </div>
-                      <div className="wl-sub"><Icon name="call" />{e.phone}</div>
-                      {e.memo && <div className="wl-sub wl-memo"><Icon name="sticky_note_2" />{e.memo}</div>}
-                      <div className="wl-sub wl-time"><Icon name="schedule" />{hhmm(e.createdAt)} 접수</div>
                     </div>
-                    <div className="wl-actions">
-                      {e.status === 'WAITING' && <button className="btn-ghost btn-sm" onClick={() => call(e.id)}><Icon name="campaign" /> 호출</button>}
-                      <button className="btn-primary btn-sm" onClick={() => seat(e.id)}><Icon name="check" /> 착석</button>
-                      <button className="btn-danger btn-sm" onClick={() => cancel(e.id)}>취소</button>
+                    <div className="wl-wcard-meta">
+                      <span><Icon name="group" />{e.partySize}명</span>
+                      <span><Icon name="schedule" />{hhmm(e.createdAt)} 접수</span>
+                    </div>
+                    {e.status === 'WAITING' && (
+                      <button className="wl-btn-call" onClick={() => call(e.id)}><Icon name="campaign" /> 호출하기</button>
+                    )}
+                    <div className="wl-cbtns">
+                      <button className="wl-btn-seat" onClick={() => seat(e.id)}>착석</button>
+                      <button className="wl-btn-cancel" onClick={() => cancel(e.id)}>취소</button>
                     </div>
                   </div>
                 ))}
