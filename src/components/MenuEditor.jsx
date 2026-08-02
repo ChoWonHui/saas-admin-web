@@ -233,7 +233,7 @@ export default function MenuEditor({
 }
 
 /** 메뉴 추가/수정 — 이름·가격·설명·사진·품절 + 옵션그룹. */
-function MenuItemDialog({ tenantId, branchId, menuApi, imageApi, categoryId, categories, item, onClose, onSaved, onError }) {
+export function MenuItemDialog({ tenantId, branchId, menuApi, imageApi, categoryId, categories, item, onClose, onSaved, onError }) {
   const editing = !!item
   const [form, setForm] = useState({
     name: item?.name ?? '',
@@ -424,7 +424,7 @@ function MenuItemDialog({ tenantId, branchId, menuApi, imageApi, categoryId, cat
 }
 
 /** 이미지 검색(Pixabay) — 키워드로 검색 후 클릭하면 S3 에 저장해 삽입. */
-function ImageSearchModal({ imageApi, defaultQuery, onPick, onClose, onError }) {
+export function ImageSearchModal({ imageApi, defaultQuery, onPick, onClose, onError }) {
   const [q, setQ] = useState(defaultQuery ?? '')
   const [results, setResults] = useState(null) // null=검색전
   const [loading, setLoading] = useState(false)
@@ -479,7 +479,7 @@ function ImageSearchModal({ imageApi, defaultQuery, onPick, onClose, onError }) 
 }
 
 /** 분류 추가/이름수정 입력 모달. */
-function CategoryDialog({ mode, initial, onClose, onSubmit }) {
+export function CategoryDialog({ mode, initial, onClose, onSubmit }) {
   const [name, setName] = useState(initial)
   const submit = (e) => { e.preventDefault(); if (name.trim()) onSubmit(name) }
   return (

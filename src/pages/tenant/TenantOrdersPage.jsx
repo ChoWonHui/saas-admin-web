@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import TenantShell from '../../components/TenantShell'
 import Toast from '../../components/Toast'
 import Icon from '../../components/Icon'
 import Loading from '../../components/Loading'
 import SoldOutModal from '../../components/SoldOutModal'
-import { tenantOrderApi, tenantTableApi, tenantMenuBoardApi } from '../../api/tenantClient'
+import { tenantOrderApi, tenantTableApi, tenantMenuBoardApi, tenantTokenStore } from '../../api/tenantClient'
 
 // 로컬 기준 오늘(yyyy-MM-dd). toISOString(UTC)은 저녁에 하루 밀릴 수 있어 직접 만든다.
 function todayLocal() {
@@ -98,11 +98,42 @@ export default function TenantOrdersPage() {
   useEffect(() => { setPage(0) }, [filter, date])
   useEffect(() => { if (view === 'list') load(filter, date, page) }, [view, filter, date, page, load])
   useEffect(() => { if (view === 'board') loadBoard() }, [view, loadBoard])
-  // 실시간 대체 — 8초마다 새로고침 (WebSocket 은 이후 단계)
+
+  // 현재 화면을 다시 불러오는 함수를 ref 로 최신 유지(웹소켓 콜백에서 사용).
+  const refreshRef = useRef(() => {})
+  refreshRef.current = () => (view === 'board' ? loadBoard() : load(filter, date, page))
+
+  // 안전망 — 8초마다 자동 새로고침.
   useEffect(() => {
-    const t = setInterval(() => (view === 'board' ? loadBoard() : load(filter, date, page)), 8000)
+    const t = setInterval(() => refreshRef.current(), 8000)
     return () => clearInterval(t)
-  }, [view, filter, date, page, load, loadBoard])
+  }, [])
+
+  // 실시간 — 손님이 결제(주문)하면 웹소켓으로 즉시 새 주문을 받아 새로고침 + 배너.
+  const [orderFlash, setOrderFlash] = useState('')
+  useEffect(() => {
+    let alive = true, ws = null, reconnect = null
+    const connect = () => {
+      if (!alive) return
+      const token = tenantTokenStore.access
+      if (!token) { reconnect = setTimeout(connect, 4000); return }
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      try { ws = new WebSocket(`${proto}//${window.location.host}/ws/tenant-notify?token=${encodeURIComponent(token)}`) }
+      catch { reconnect = setTimeout(connect, 4000); return }
+      ws.onmessage = (e) => {
+        let msg = {}
+        try { msg = JSON.parse(e.data) } catch { /* noop */ }
+        if (msg.type !== 'NEW_ORDER') return
+        refreshRef.current()
+        setOrderFlash(`새 주문이 들어왔어요${msg.tableLabel ? ` · ${msg.tableLabel}` : ''}`)
+        setTimeout(() => { if (alive) setOrderFlash('') }, 4500)
+      }
+      ws.onclose = () => { if (alive) reconnect = setTimeout(connect, 4000) }
+      ws.onerror = () => { try { ws.close() } catch { /* noop */ } }
+    }
+    connect()
+    return () => { alive = false; clearTimeout(reconnect); if (ws) { ws.onclose = null; try { ws.close() } catch { /* noop */ } } }
+  }, [])
 
   async function change(order, to) {
     setBusy(order.orderId)
@@ -129,10 +160,16 @@ export default function TenantOrdersPage() {
 
   return (
     <TenantShell>
+      {orderFlash && (
+        <div className="ord-newflash" role="status">
+          <Icon name="notifications_active" filled /> {orderFlash}
+        </div>
+      )}
       <div className="m-topline">
         <div className="m-page-head">
+          <span className="m-eyebrow"><Icon name="receipt_long" /> ORDER MANAGEMENT</span>
           <h1>주문 관리</h1>
-          <p>들어온 주문을 확인하고 상태를 진행하세요. <span className="m-nowrap">(8초마다 자동 갱신)</span></p>
+          <p>들어온 주문을 확인하고 상태를 진행하세요. <span className="m-nowrap">(새 주문 실시간 알림)</span></p>
         </div>
         <div className="m-topline-actions">
           <button className="m-btn m-btn-outline2" onClick={() => setSoldOpen(true)}><Icon name="remove_shopping_cart" /> 품절 관리</button>

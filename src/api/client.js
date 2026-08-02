@@ -291,6 +291,10 @@ export const inquiryApi = {
   reply: (id, body) => api(`/api/platform-admin/inquiries/${id}/replies`, { method: 'POST', body }),
   close: (id) => api(`/api/platform-admin/inquiries/${id}/close`, { method: 'POST' }),
   remove: (id) => api(`/api/platform-admin/inquiries/${id}`, { method: 'DELETE' }),
+  // 업체별 대화(채팅)
+  tenantConvs: () => api('/api/platform-admin/inquiries/tenants'),
+  tenantConv: (tenantId) => api(`/api/platform-admin/inquiries/tenants/${tenantId}`),
+  sendToTenant: (tenantId, body) => api(`/api/platform-admin/inquiries/tenants/${tenantId}/messages`, { method: 'POST', body }),
   // 답변 이미지 업로드는 기존 관리자 업로드 엔드포인트(fileApi.uploadImage)를 그대로 쓴다.
 }
 
@@ -330,6 +334,8 @@ export const staffApi = {
   resetPassword: (tid, staffId, newPassword) =>
     api(`${staffApi.base(tid)}/${staffId}/password`, { method: 'POST', body: { newPassword } }),
   remove: (tid, staffId) => api(`${staffApi.base(tid)}/${staffId}`, { method: 'DELETE' }),
+  emailAvailable: (tid, email) =>
+    api(`${staffApi.base(tid)}/email-available?email=${encodeURIComponent(email)}`),
 }
 
 export const tenantApi = {

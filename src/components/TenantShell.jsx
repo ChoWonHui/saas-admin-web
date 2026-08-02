@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useTenantAuth } from '../auth/TenantAuthContext'
 import { tenantNoticeBoardApi, tenantMenuApi } from '../api/tenantClient'
 import Icon from './Icon'
+import TenantNotiBell from './TenantNotiBell'
 
 const ROLE_LABEL = {
   TENANT_OWNER: '대표',
@@ -124,7 +125,7 @@ export default function TenantShell({ children }) {
             </nav>
           </div>
           <div className="m-topbar-right">
-            <button type="button" className="m-icon-btn" title="알림"><Icon name="notifications" /></button>
+            <TenantNotiBell />
             <span className="m-divider" />
             <span className="m-user">
               {user?.email}

@@ -32,6 +32,7 @@ export default function TenantStaffPage() {
     <TenantShell>
       <div className="m-topline">
         <div className="m-page-head">
+          <span className="m-eyebrow"><Icon name="group" /> STAFF MANAGEMENT</span>
           <h1>직원 관리</h1>
           <p>홀·주방 직원의 로그인 계정을 만들고 역할과 상태를 관리하세요.</p>
         </div>
@@ -56,7 +57,7 @@ export default function TenantStaffPage() {
                   <span className={`stf-avatar ${role.cls}`}>{initial(m.name)}</span>
                   <div className="stf-id">
                     <div className="stf-name">{m.name}<span className={`stf-role ${role.cls}`}>{role.label}</span></div>
-                    <div className="stf-login"><Icon name="badge" />{m.loginId || m.email}</div>
+                    <div className="stf-login"><Icon name="mail" />{m.email || m.loginId}</div>
                   </div>
                 </div>
                 <div className="stf-meta">
@@ -87,7 +88,6 @@ export default function TenantStaffPage() {
 function StaffDialog({ dialog, onClose, onSaved, onError }) {
   const { mode, member } = dialog
   const [form, setForm] = useState({
-    loginId: '',
     email: member?.email || '',
     password: '',
     name: member?.name || '',
@@ -109,8 +109,8 @@ function StaffDialog({ dialog, onClose, onSaved, onError }) {
     }
     return (
       <Modal title="직원 삭제" onClose={onClose}>
-        <p className="confirm-text"><strong>{member.name}({member.loginId})</strong> 직원을 삭제하시겠습니까?</p>
-        <p className="hint left">로그인 계정이 사라져 더 이상 이 아이디로 로그인할 수 없습니다.</p>
+        <p className="confirm-text"><strong>{member.name}({member.email || member.loginId})</strong> 직원을 삭제하시겠습니까?</p>
+        <p className="hint left">로그인 계정이 사라져 더 이상 이 이메일로 로그인할 수 없습니다.</p>
         <div className="dialog-actions">
           <button type="button" className="btn-ghost" onClick={onClose}>취소</button>
           <button type="button" className="btn-danger" onClick={remove} disabled={saving}>{saving ? '처리 중…' : '삭제'}</button>
@@ -150,8 +150,7 @@ function StaffDialog({ dialog, onClose, onSaved, onError }) {
     try {
       if (mode === 'create') {
         await tenantStaffApi.create({
-          loginId: form.loginId.trim(),
-          email: form.email.trim() || undefined,
+          email: form.email.trim(),
           password: form.password,
           name: form.name.trim(),
           phone: form.phone.trim() || undefined,
@@ -175,8 +174,8 @@ function StaffDialog({ dialog, onClose, onSaved, onError }) {
         {mode === 'create' && (
           <>
             <label className="field">
-              <span>로그인 아이디 (영문/숫자/._- 3~50자)</span>
-              <input value={form.loginId} onChange={set('loginId')} placeholder="staff01" required autoFocus />
+              <span>로그인 이메일</span>
+              <input type="email" value={form.email} onChange={set('email')} placeholder="staff@shop.com" required autoFocus />
             </label>
             <label className="field">
               <span>초기 비밀번호 (8자 이상)</span>
@@ -185,25 +184,17 @@ function StaffDialog({ dialog, onClose, onSaved, onError }) {
           </>
         )}
         {mode === 'edit' && (
-          <p className="hint left">로그인 아이디 <b>{member.loginId}</b> — 아이디는 바꿀 수 없습니다.</p>
+          <p className="hint left">로그인 이메일 <b>{member.email || member.loginId}</b> — 이메일은 바꿀 수 없습니다.</p>
         )}
 
         <label className="field">
           <span>이름</span>
           <input value={form.name} onChange={set('name')} maxLength={50} required />
         </label>
-        <div className="field-row">
-          <label className="field">
-            <span>연락처 (선택)</span>
-            <input value={form.phone} onChange={set('phone')} maxLength={20} placeholder="010-0000-0000" />
-          </label>
-          {mode === 'create' && (
-            <label className="field">
-              <span>이메일 (선택)</span>
-              <input type="email" value={form.email} onChange={set('email')} placeholder="비밀번호 찾기용" />
-            </label>
-          )}
-        </div>
+        <label className="field">
+          <span>연락처 (선택)</span>
+          <input value={form.phone} onChange={set('phone')} maxLength={20} placeholder="010-0000-0000" />
+        </label>
 
         <div className="field-row">
           <label className="field">

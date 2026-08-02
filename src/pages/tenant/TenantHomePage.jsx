@@ -53,7 +53,8 @@ export default function TenantHomePage() {
     <TenantShell>
       <div className="m-topline m-topline-sticky">
         <div className="m-page-head">
-          <h1>store decorate</h1>
+          <span className="m-eyebrow"><Icon name="storefront" /> STORE DESIGN</span>
+          <h1>스토어 디자인</h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {flash && <span className="save-flash">저장되었습니다 ✓</span>}

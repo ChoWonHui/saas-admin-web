@@ -13,6 +13,12 @@ export default defineConfig({
         target: 'http://localhost:8089',
         changeOrigin: true,
       },
+      // 관리자 실시간 알림 웹소켓 — 백엔드로 업그레이드 프록시.
+      '/ws': {
+        target: 'ws://localhost:8089',
+        ws: true,
+        changeOrigin: true,
+      },
     },
   },
 })

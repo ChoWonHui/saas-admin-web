@@ -49,6 +49,7 @@ export default function TenantWaitlistPage() {
     <TenantShell>
       <div className="m-topline">
         <div className="m-page-head">
+          <span className="m-eyebrow"><Icon name="event_available" /> RESERVATIONS</span>
           <h1>예약·대기 관리</h1>
           <p>미리 오는 손님은 예약으로 접수하고, 테이블이 꽉 차면 워킹 손님에게 대기표를 발급하세요.</p>
         </div>

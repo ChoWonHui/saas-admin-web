@@ -319,22 +319,43 @@ export default function TenantsPage() {
 /** 업체 등록 직후 — 대표(로그인) 계정 만들기 단계. 역할은 대표로 고정. */
 function OwnerSetupDialog({ tenant, onClose, onDone, onError }) {
   const [form, setForm] = useState({
-    loginId: '', email: '', password: '', name: tenant.ownerName ?? '', phone: tenant.contactPhone ?? '',
+    email: '', password: '', name: tenant.ownerName ?? '', phone: tenant.contactPhone ?? '',
   })
   const [saving, setSaving] = useState(false)
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
 
+  // 이메일을 다 입력하면(타이핑을 멈추면) 저장 전에 중복 여부를 미리 확인한다.
+  const [emailCheck, setEmailCheck] = useState({ status: 'idle' }) // idle|invalid|checking|ok|dup
+  const reqIdRef = useRef(0)
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  useEffect(() => {
+    const email = form.email.trim()
+    if (!email) { setEmailCheck({ status: 'idle' }); return }
+    if (!EMAIL_RE.test(email)) { setEmailCheck({ status: 'invalid' }); return }
+    setEmailCheck({ status: 'checking' })
+    const myId = ++reqIdRef.current
+    const timer = setTimeout(async () => {
+      try {
+        const r = await staffApi.emailAvailable(tenant.tenantId, email)
+        if (myId !== reqIdRef.current) return
+        setEmailCheck({ status: r.available ? 'ok' : 'dup' })
+      } catch {
+        if (myId === reqIdRef.current) setEmailCheck({ status: 'idle' })
+      }
+    }, 450)
+    return () => clearTimeout(timer)
+  }, [form.email, tenant.tenantId])
+
   async function create() {
-    if (!/^[a-zA-Z0-9._-]{3,50}$/.test(form.loginId.trim())) {
-      onError('아이디는 영문/숫자/._- 조합 3~50자입니다.'); return
-    }
+    const email = form.email.trim()
+    if (!EMAIL_RE.test(email)) { onError('이메일 형식이 올바르지 않습니다.'); return }
+    if (emailCheck.status === 'dup') { onError('이미 사용 중인 이메일입니다.'); return }
     if (form.password.length < 8) { onError('비밀번호는 8자 이상이어야 합니다.'); return }
     if (!form.name.trim()) { onError('대표 이름을 입력하세요.'); return }
     setSaving(true)
     try {
       await staffApi.create(tenant.tenantId, {
-        loginId: form.loginId.trim(),
-        email: form.email.trim() || undefined,
+        email,
         password: form.password, name: form.name.trim(),
         phone: form.phone, roleId: 2, // 대표
       })
@@ -348,22 +369,26 @@ function OwnerSetupDialog({ tenant, onClose, onDone, onError }) {
         <h3>대표 계정 만들기</h3>
         <p className="confirm-text">
           <strong>{tenant.tenantName}</strong>({tenant.tenantCode}) 등록 완료. 이제 로그인할 <strong>대표 계정</strong>을 만드세요.
-          <br />로그인은 <strong>업체코드 + 아이디 + 비밀번호</strong>로 합니다.
+          <br />로그인은 <strong>업체코드 + 이메일 + 비밀번호</strong>로 합니다.
         </p>
 
         <label className="field">
-          <span>로그인 아이디 <span className="req">*</span></span>
-          <input type="text" value={form.loginId} onChange={set('loginId')} placeholder="예: master" maxLength={50} autoFocus />
-          <span className="field-hint">가게 안에서만 안 겹치면 됩니다(영문/숫자/._-).</span>
+          <span>로그인 이메일 <span className="req">*</span></span>
+          <input
+            type="email" value={form.email} onChange={set('email')}
+            placeholder="owner@example.com" maxLength={150} autoFocus
+            className={emailCheck.status === 'dup' ? 'input-error' : emailCheck.status === 'ok' ? 'input-ok' : ''}
+          />
+          {emailCheck.status === 'checking' && <span className="field-hint">중복 확인 중…</span>}
+          {emailCheck.status === 'invalid' && <span className="field-hint err">이메일 형식이 올바르지 않습니다.</span>}
+          {emailCheck.status === 'dup' && <span className="field-hint err">이미 사용 중인 이메일입니다.</span>}
+          {emailCheck.status === 'ok' && <span className="field-hint ok">사용할 수 있는 이메일입니다.</span>}
+          {emailCheck.status === 'idle' && <span className="field-hint">이 이메일로 로그인합니다. 대표 개인 이메일을 입력하세요.</span>}
         </label>
         <label className="field">
           <span>초기 비밀번호 <span className="req">*</span></span>
           <input type="text" value={form.password} onChange={set('password')} placeholder="8자 이상" maxLength={64} />
           <span className="field-hint">대표에게 전달할 초기 비밀번호입니다.</span>
-        </label>
-        <label className="field">
-          <span>이메일 <span className="muted">(선택)</span></span>
-          <input type="email" value={form.email} onChange={set('email')} placeholder="owner@example.com" maxLength={150} />
         </label>
         <div className="field-row">
           <label className="field">
@@ -378,7 +403,7 @@ function OwnerSetupDialog({ tenant, onClose, onDone, onError }) {
 
         <div className="dialog-actions">
           <button className="btn-ghost" onClick={onClose}>나중에</button>
-          <button className="btn-primary" onClick={create} disabled={saving}>{saving ? '만드는 중…' : '대표 계정 만들기'}</button>
+          <button className="btn-primary" onClick={create} disabled={saving || emailCheck.status === 'dup' || emailCheck.status === 'checking'}>{saving ? '만드는 중…' : '대표 계정 만들기'}</button>
         </div>
       </div>
     </div>

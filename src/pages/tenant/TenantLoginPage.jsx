@@ -88,7 +88,7 @@ export default function TenantLoginPage() {
             </h1>
             <p className="owner-sub">
               {locked && shopName
-                ? '아이디와 비밀번호를 입력해 주세요.'
+                ? '이메일과 비밀번호를 입력해 주세요.'
                 : '오늘도 좋은 하루 되세요. 가게 운영을 시작해 볼까요?'}
             </p>
           </div>
@@ -130,16 +130,16 @@ export default function TenantLoginPage() {
           )}
 
           <label className="owner-field">
-            <span className="of-label">아이디 또는 이메일</span>
+            <span className="of-label">이메일</span>
             <span className="of-input">
-              <span className="of-ico" aria-hidden="true">👤</span>
+              <span className="of-ico" aria-hidden="true">✉️</span>
               <input
                 ref={idRef}
-                type="text"
+                type="email"
                 value={loginId}
                 onChange={(e) => setLoginId(e.target.value.replace(/\s/g, ''))}
-                autoComplete="username"
-                placeholder="아이디 또는 이메일"
+                autoComplete="email"
+                placeholder="이메일을 입력해주세요"
                 maxLength={150}
                 required
                 autoFocus={locked}

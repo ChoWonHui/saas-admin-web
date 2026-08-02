@@ -1,25 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import Shell from '../components/Shell'
 import Toast from '../components/Toast'
 import Loading from '../components/Loading'
+import Icon from '../components/Icon'
 import { fileApi, inquiryApi } from '../api/client'
 
-const STATUS = {
-  OPEN: { label: '답변대기', cls: 'open' },
-  ANSWERED: { label: '답변완료', cls: 'answered' },
-  CLOSED: { label: '종료', cls: 'closed' },
-}
-const FILTERS = [
-  { key: 'ALL', label: '전체' },
-  { key: 'OPEN', label: '답변대기' },
-  { key: 'ANSWERED', label: '답변완료' },
-  { key: 'CLOSED', label: '종료' },
-]
-function fmt(dt) {
-  return dt ? dt.slice(0, 16).replace('T', ' ') : ''
-}
+const fmt = (dt) => (dt ? dt.slice(0, 16).replace('T', ' ') : '')
+const fmtShort = (dt) => (dt ? dt.slice(5, 16).replace('T', ' ').replace('-', '.') : '')
 
-/** 이미지 첨부(관리자 업로드 엔드포인트 사용). */
+/** 이미지 첨부(관리자 업로드). */
 function ImageAttach({ urls, setUrls, onError }) {
   const inputRef = useRef(null)
   const [busy, setBusy] = useState(false)
@@ -39,212 +29,184 @@ function ImageAttach({ urls, setUrls, onError }) {
     finally { setBusy(false) }
   }
   return (
-    <div className="img-attach">
-      <div className="img-thumbs">
-        {urls.map((u, i) => (
-          <div key={u + i} className="img-thumb">
-            <img src={u} alt="첨부" />
-            <button type="button" className="img-del" onClick={() => setUrls((p) => p.filter((_, idx) => idx !== i))} aria-label="삭제">×</button>
-          </div>
-        ))}
-        <button type="button" className="img-add" onClick={() => inputRef.current?.click()} disabled={busy}>
-          {busy ? '올리는 중…' : '＋ 사진'}
-        </button>
-      </div>
+    <div className="ac-attach">
+      {urls.map((u, i) => (
+        <div key={u + i} className="ac-thumb">
+          <img src={u} alt="첨부" />
+          <button type="button" className="ac-thumb-del" onClick={() => setUrls((p) => p.filter((_, idx) => idx !== i))} aria-label="삭제">×</button>
+        </div>
+      ))}
+      <button type="button" className="ac-attach-btn" onClick={() => inputRef.current?.click()} disabled={busy} aria-label="사진 첨부">
+        <Icon name="add_photo_alternate" />
+      </button>
       <input ref={inputRef} type="file" accept="image/*" multiple hidden onChange={pick} />
     </div>
   )
 }
 
-function Bubble({ side, name, badge, content, images, at }) {
+/** 관리자 화면 기준: 관리자(me)=오른쪽 인디고, 업체(other)=왼쪽 회색. */
+function Bubble({ me, name, content, images, at }) {
   return (
-    <div className={`iq-bubble ${side}`}>
-      <div className="iq-bubble-head">
-        <span className="iq-who">{name}</span>
-        {badge && <span className={`iq-badge ${badge.cls}`}>{badge.label}</span>}
-        <span className="iq-at">{fmt(at)}</span>
-      </div>
-      {content && <p className="iq-text">{content}</p>}
-      {images?.length > 0 && (
-        <div className="iq-images">
-          {images.map((u, i) => (
-            <a key={u + i} href={u} target="_blank" rel="noreferrer"><img src={u} alt="첨부 이미지" /></a>
-          ))}
+    <div className={`ac-row ${me ? 'me' : 'other'}`}>
+      {!me && <span className="ac-avatar" aria-hidden="true"><Icon name="storefront" /></span>}
+      <div className="ac-bubble-wrap">
+        <div className="ac-bubble-meta">
+          {!me && <span className="ac-name">{name}</span>}
+          <span className="ac-at">{fmt(at)}</span>
         </div>
-      )}
+        <div className={`ac-bubble ${me ? 'me' : 'other'}`}>
+          {content && <p className="ac-text">{content}</p>}
+          {images?.length > 0 && (
+            <div className="ac-images">
+              {images.map((u, i) => <a key={u + i} href={u} target="_blank" rel="noreferrer"><img src={u} alt="첨부 이미지" /></a>)}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
 
 export default function InquiriesPage() {
-  const [filter, setFilter] = useState('ALL')
-  const [all, setAll] = useState(null) // 전체(통계 + 클라이언트 필터)
-  const [detail, setDetail] = useState(null)
+  const [convs, setConvs] = useState(null)   // 업체별 대화 목록
+  const [activeId, setActiveId] = useState(null) // 선택한 tenantId
+  const [conv, setConv] = useState(null)     // 열린 대화(ConvView)
+  const [content, setContent] = useState('')
+  const [urls, setUrls] = useState([])
+  const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
+  const bodyRef = useRef(null)
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  const load = useCallback(async () => {
-    try { setAll(await inquiryApi.list('ALL')) }
-    catch (e) { setError(e.message); setAll([]) }
+  const loadList = useCallback(async () => {
+    try { setConvs(await inquiryApi.tenantConvs()) }
+    catch (e) { setError(e.message); setConvs([]) }
   }, [])
-  useEffect(() => { load() }, [load])
 
-  async function openDetail(id) {
-    try { setDetail(await inquiryApi.get(id)) }
+  const openConv = useCallback(async (tenantId) => {
+    setActiveId(tenantId)
+    try { setConv(await inquiryApi.tenantConv(tenantId)) }
     catch (e) { setError(e.message) }
-  }
+  }, [])
 
-  const listAll = all ?? []
-  const items = filter === 'ALL' ? listAll : listAll.filter((q) => q.status === filter)
-  const openCount = listAll.filter((q) => q.status === 'OPEN').length
-  const answeredCount = listAll.filter((q) => q.status === 'ANSWERED').length
+  useEffect(() => { loadList() }, [loadList])
+
+  // 헤더 벨에서 넘어온 ?tenant=<id> 로 해당 업체 대화를 연다.
+  useEffect(() => {
+    const tid = searchParams.get('tenant')
+    if (!tid) return
+    openConv(Number(tid))
+    const next = new URLSearchParams(searchParams); next.delete('tenant'); setSearchParams(next, { replace: true })
+  }, [searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 열려 있는 동안 새 메시지를 위해 가볍게 폴링(목록 + 현재 대화).
+  useEffect(() => {
+    const t = setInterval(() => {
+      loadList()
+      if (activeId) inquiryApi.tenantConv(activeId).then(setConv).catch(() => {})
+    }, 12000)
+    return () => clearInterval(t)
+  }, [activeId, loadList])
+
+  useEffect(() => { const el = bodyRef.current; if (el) el.scrollTop = el.scrollHeight }, [conv])
+
+  async function send(e) {
+    e?.preventDefault?.()
+    const text = content.trim()
+    if ((!text && urls.length === 0) || !activeId) return
+    setSending(true)
+    try {
+      const updated = await inquiryApi.sendToTenant(activeId, { content: text, imageUrls: urls })
+      setContent(''); setUrls([])
+      setConv(updated)
+      loadList()
+    } catch (err) { setError(err.message) } finally { setSending(false) }
+  }
+  function onKeyDown(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }
+
+  const list = convs ?? []
+  const pending = list.filter((c) => c.needsReply).length
 
   return (
     <Shell>
       <Toast message={error} onClose={() => setError('')} />
-      <div className="notice-page">
-        {/* 히어로 — 공지사항과 동일한 배너 + 상태 필터 */}
-        <div className="notice-hero">
-          <div className="notice-hero-icon" aria-hidden="true">💬</div>
-          <div className="notice-hero-text">
-            <h2>문의 관리</h2>
-            <p>업체(사장님)가 남긴 문의를 확인하고 답변하세요.</p>
-          </div>
-          <div className="notice-hero-actions">
-            <div className="iq-filters">
-              {FILTERS.map((f) => (
-                <button key={f.key} className={`iq-filter${filter === f.key ? ' on' : ''}`} onClick={() => setFilter(f.key)}>
-                  {f.label}
-                </button>
-              ))}
+      <div className={`ac${activeId ? ' chatting' : ''}`}>
+        {/* 업체 대화 목록 */}
+        <aside className="ac-list-pane">
+          <div className="ac-list-head">
+            <div>
+              <span className="ac-eyebrow"><Icon name="support_agent" /> INQUIRIES</span>
+              <h2>문의</h2>
             </div>
+            {pending > 0 && <span className="ac-pending">답변대기 {pending}</span>}
           </div>
-        </div>
+          {convs === null ? (
+            <Loading label="불러오는 중…" />
+          ) : list.length === 0 ? (
+            <div className="ac-empty"><span aria-hidden="true">💬</span><p>아직 문의가 없습니다.</p></div>
+          ) : (
+            <ul className="ac-list">
+              {list.map((c) => (
+                <li key={c.tenantId}>
+                  <button type="button" className={`ac-item${activeId === c.tenantId ? ' on' : ''}${c.needsReply ? ' unread' : ''}`} onClick={() => openConv(c.tenantId)}>
+                    <span className="ac-item-avatar"><Icon name="storefront" /></span>
+                    <span className="ac-item-txt">
+                      <span className="ac-item-top">
+                        <span className="ac-item-name">{c.tenantName}</span>
+                        <span className="ac-item-at">{fmtShort(c.lastAt)}</span>
+                      </span>
+                      <span className="ac-item-last">
+                        {c.lastFrom === 'ADMIN' && <span className="ac-item-me">나: </span>}
+                        {c.lastMessage || '(사진)'}
+                      </span>
+                    </span>
+                    {c.needsReply && <span className="ac-dot" aria-label="답변 대기" />}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </aside>
 
-        {/* 요약 카드 */}
-        <div className="notice-stats">
-          <div className="stat-card">
-            <span className="stat-num">{all === null ? '–' : listAll.length}</span>
-            <span className="stat-label">전체 문의</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-num stat-accent">{all === null ? '–' : openCount}</span>
-            <span className="stat-label">답변 대기</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-num">{all === null ? '–' : answeredCount}</span>
-            <span className="stat-label">답변 완료</span>
-          </div>
-        </div>
-
-        {/* 목록 카드 */}
-        <div className="card notice-list-card">
-          {all === null ? (
-            <Loading label="문의를 불러오는 중…" />
-          ) : items.length === 0 ? (
-            <div className="notice-empty-state">
-              <div className="notice-empty-ic" aria-hidden="true">💬</div>
-              <p className="notice-empty-title">해당하는 문의가 없습니다.</p>
-              <p className="notice-empty-sub">다른 상태 탭을 선택해 보세요.</p>
+        {/* 대화(채팅) — 업체 콘솔과 동일 디자인 */}
+        <section className="ac-chat-pane">
+          {!activeId ? (
+            <div className="ac-chat-blank">
+              <span aria-hidden="true">💬</span>
+              <p>왼쪽에서 업체를 선택해 대화를 시작하세요.</p>
             </div>
           ) : (
-            <div className="table-wrap">
-              <table className="table notice-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 90 }}>상태</th><th className="col-grow">제목</th><th style={{ width: 160 }}>업체</th>
-                    <th style={{ width: 110 }}>작성자</th><th style={{ width: 60 }}>답변</th><th style={{ width: 140 }}>등록일</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((q) => (
-                    <tr key={q.inquiryId} className="row-clickable" onClick={() => openDetail(q.inquiryId)}>
-                      <td><span className={`iq-badge ${STATUS[q.status]?.cls}`}>{STATUS[q.status]?.label}</span></td>
-                      <td className="strong notice-cell-title">{q.title}{q.hasImages && <span className="iq-clip" aria-label="사진 첨부">📎</span>}</td>
-                      <td className="muted-cell">{q.tenantName}</td>
-                      <td className="muted-cell">{q.authorName}</td>
-                      <td className="muted-cell">{q.replyCount || ''}</td>
-                      <td className="muted-cell">{fmt(q.createdAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="ac-chat">
+              <div className="ac-bar">
+                <button type="button" className="ac-back" onClick={() => { setActiveId(null); setConv(null) }} aria-label="목록"><Icon name="arrow_back" /></button>
+                <span className="ac-bar-ic" aria-hidden="true"><Icon name="storefront" /></span>
+                <div className="ac-bar-title">
+                  <b>{conv?.tenantName || '대화'}</b>
+                  <span className="ac-bar-hint">업체와 실시간으로 상담</span>
+                </div>
+              </div>
+              <div className="ac-body" ref={bodyRef}>
+                {conv === null ? (
+                  <Loading label="대화를 여는 중…" />
+                ) : conv.messages.length === 0 ? (
+                  <div className="ac-chat-blank"><span aria-hidden="true">💬</span><p>아직 메시지가 없습니다.</p></div>
+                ) : (
+                  conv.messages.map((m, i) => (
+                    <Bubble key={i} me={m.from === 'ADMIN'} name={m.name} content={m.content} images={m.imageUrls} at={m.at} />
+                  ))
+                )}
+              </div>
+              <form className="ac-composer" onSubmit={send}>
+                <ImageAttach urls={urls} setUrls={setUrls} onError={setError} />
+                <div className="ac-inputrow">
+                  <textarea value={content} onChange={(e) => setContent(e.target.value)} onKeyDown={onKeyDown} rows={1} maxLength={5000} placeholder="답변 메시지를 입력하세요…" />
+                  <button type="submit" className="ac-send" disabled={sending || (!content.trim() && urls.length === 0)} aria-label="전송"><Icon name="send" filled /></button>
+                </div>
+              </form>
             </div>
           )}
-        </div>
+        </section>
       </div>
-
-      {detail && (
-        <AnswerModal
-          detail={detail}
-          onClose={() => setDetail(null)}
-          onChanged={(updated) => { setDetail(updated); load() }}
-          onError={setError}
-        />
-      )}
     </Shell>
-  )
-}
-
-function AnswerModal({ detail, onClose, onChanged, onError }) {
-  const [content, setContent] = useState('')
-  const [urls, setUrls] = useState([])
-  const [saving, setSaving] = useState(false)
-  const closed = detail.status === 'CLOSED'
-
-  async function submit(e) {
-    e.preventDefault()
-    if (!content.trim()) { onError('답변 내용을 입력하세요.'); return }
-    setSaving(true)
-    try {
-      const updated = await inquiryApi.reply(detail.inquiryId, { content, imageUrls: urls })
-      setContent(''); setUrls([]); onChanged(updated)
-    } catch (e) { onError(e.message) } finally { setSaving(false) }
-  }
-  async function close() {
-    try { onChanged(await inquiryApi.close(detail.inquiryId)) }
-    catch (e) { onError(e.message) }
-  }
-
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal iq-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="iq-modal-head">
-          <div>
-            <span className={`iq-badge ${STATUS[detail.status]?.cls}`}>{STATUS[detail.status]?.label}</span>
-            <span className="iq-modal-tenant">{detail.tenantName}</span>
-          </div>
-          <button className="btn-ghost btn-sm" onClick={onClose}>닫기</button>
-        </div>
-        <h3 className="iq-title">{detail.title}</h3>
-
-        <div className="iq-thread iq-thread-scroll">
-          <Bubble side="left" name={detail.authorName} content={detail.content} images={detail.imageUrls} at={detail.createdAt} />
-          {detail.replies.map((r) => (
-            <Bubble
-              key={r.replyId}
-              side={r.authorType === 'ADMIN' ? 'right' : 'left'}
-              name={r.authorName}
-              badge={r.authorType === 'ADMIN' ? { label: '관리자', cls: 'admin' } : { label: '업체', cls: 'tenant' }}
-              content={r.content}
-              images={r.imageUrls}
-              at={r.createdAt}
-            />
-          ))}
-        </div>
-
-        {closed ? (
-          <p className="iq-closed">종료된 문의입니다.</p>
-        ) : (
-          <form className="iq-replybox" onSubmit={submit}>
-            <textarea value={content} onChange={(e) => setContent(e.target.value)} maxLength={5000} rows={3} placeholder="답변을 입력하세요." autoFocus />
-            <ImageAttach urls={urls} setUrls={setUrls} onError={onError} />
-            <div className="iq-modal-actions">
-              <button type="button" className="btn-ghost btn-sm" onClick={close}>문의 종료</button>
-              <button type="submit" className="btn-primary" disabled={saving}>{saving ? '등록 중…' : '답변 등록'}</button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
   )
 }

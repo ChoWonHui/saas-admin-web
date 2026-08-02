@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { staffApi } from '../api/client'
 
 const ROLE_OPTIONS = [
@@ -49,7 +49,7 @@ export default function StaffModal({ tenant, onClose, onError }) {
             <table className="table">
               <thead>
                 <tr>
-                  <th>이름</th><th>아이디</th><th style={{ width: 80 }}>역할</th>
+                  <th>이름</th><th>로그인 이메일</th><th style={{ width: 80 }}>역할</th>
                   <th style={{ width: 70 }}>상태</th><th style={{ width: 130 }}>최근 접속</th>
                   <th style={{ width: 200 }}>작업</th>
                 </tr>
@@ -58,7 +58,7 @@ export default function StaffModal({ tenant, onClose, onError }) {
                 {staff.map((s) => (
                   <tr key={s.tenantUserId} className={s.status === 'SUSPENDED' ? 'row-deleted' : ''}>
                     <td className="strong">{s.name}</td>
-                    <td className="mono">{s.loginId || <span className="muted">-</span>}</td>
+                    <td className="mono">{s.email || s.loginId || <span className="muted">-</span>}</td>
                     <td><span className={`badge${s.roleId === 2 ? ' badge-active' : ''}`}>{s.roleName}</span></td>
                     <td><span className={`badge badge-${s.status === 'ACTIVE' ? 'active' : 'suspended'}`}>{STATUS_LABEL[s.status] ?? s.status}</span></td>
                     <td className="muted-cell">{fmt(s.lastLoginAt)}</td>
@@ -117,7 +117,6 @@ export default function StaffModal({ tenant, onClose, onError }) {
 function StaffDialog({ tid, staff, onClose, onSaved, onError }) {
   const editing = !!staff
   const [form, setForm] = useState({
-    loginId: staff?.loginId ?? '',
     email: staff?.email ?? '',
     password: '',
     name: staff?.name ?? '',
@@ -128,12 +127,37 @@ function StaffDialog({ tid, staff, onClose, onSaved, onError }) {
   const [saving, setSaving] = useState(false)
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
 
+  // 이메일 다 입력하면(타이핑을 멈추면) 저장 전에 중복 여부를 미리 확인한다.
+  // status: idle | invalid | checking | ok | dup
+  const [emailCheck, setEmailCheck] = useState({ status: 'idle' })
+  const reqIdRef = useRef(0)
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  useEffect(() => {
+    if (editing) return
+    const email = form.email.trim()
+    if (!email) { setEmailCheck({ status: 'idle' }); return }
+    if (!EMAIL_RE.test(email)) { setEmailCheck({ status: 'invalid' }); return }
+    setEmailCheck({ status: 'checking' })
+    const myId = ++reqIdRef.current
+    const timer = setTimeout(async () => {
+      try {
+        const r = await staffApi.emailAvailable(tid, email)
+        if (myId !== reqIdRef.current) return // 그 사이 이메일이 또 바뀜 — 무시
+        setEmailCheck({ status: r.available ? 'ok' : 'dup' })
+      } catch {
+        if (myId === reqIdRef.current) setEmailCheck({ status: 'idle' })
+      }
+    }, 450)
+    return () => clearTimeout(timer)
+  }, [form.email, editing, tid])
+
   async function save() {
     if (!form.name.trim()) { onError('이름을 입력하세요.'); return }
     if (!editing) {
-      if (!/^[a-zA-Z0-9._-]{3,50}$/.test(form.loginId.trim())) {
-        onError('아이디는 영문/숫자/._- 조합 3~50자입니다.'); return
+      if (!EMAIL_RE.test(form.email.trim())) {
+        onError('이메일 형식이 올바르지 않습니다.'); return
       }
+      if (emailCheck.status === 'dup') { onError('이미 사용 중인 이메일입니다.'); return }
       if (form.password.length < 8) { onError('초기 비밀번호는 8자 이상이어야 합니다.'); return }
     }
     setSaving(true)
@@ -144,8 +168,7 @@ function StaffDialog({ tid, staff, onClose, onSaved, onError }) {
         })
       } else {
         await staffApi.create(tid, {
-          loginId: form.loginId.trim(),
-          email: form.email.trim() || undefined,
+          email: form.email.trim(),
           password: form.password, name: form.name.trim(),
           phone: form.phone, roleId: Number(form.roleId),
         })
@@ -160,27 +183,29 @@ function StaffDialog({ tid, staff, onClose, onSaved, onError }) {
         <h3>{editing ? '직원 정보 수정' : '직원 추가'}</h3>
 
         {editing ? (
-          <div className="readonly-field"><span>아이디</span><strong className="mono">{staff.loginId || '-'}</strong></div>
+          <div className="readonly-field"><span>로그인 이메일</span><strong className="mono">{staff.email || staff.loginId || '-'}</strong></div>
         ) : (
           <label className="field">
-            <span>로그인 아이디 <span className="req">*</span></span>
-            <input type="text" value={form.loginId} onChange={set('loginId')} placeholder="예: staff01" maxLength={50} autoFocus />
-            <span className="field-hint">가게 안에서만 안 겹치면 됩니다(영문/숫자/._-).</span>
+            <span>로그인 이메일 <span className="req">*</span></span>
+            <input
+              type="email" value={form.email} onChange={set('email')}
+              placeholder="staff@example.com" maxLength={150} autoFocus
+              className={emailCheck.status === 'dup' ? 'input-error' : emailCheck.status === 'ok' ? 'input-ok' : ''}
+            />
+            {emailCheck.status === 'checking' && <span className="field-hint">중복 확인 중…</span>}
+            {emailCheck.status === 'invalid' && <span className="field-hint err">이메일 형식이 올바르지 않습니다.</span>}
+            {emailCheck.status === 'dup' && <span className="field-hint err">이미 사용 중인 이메일입니다.</span>}
+            {emailCheck.status === 'ok' && <span className="field-hint ok">사용할 수 있는 이메일입니다.</span>}
+            {(emailCheck.status === 'idle') && <span className="field-hint">이 이메일로 로그인합니다(업체코드 + 이메일 + 비밀번호).</span>}
           </label>
         )}
 
         {!editing && (
-          <>
-            <label className="field">
-              <span>초기 비밀번호 <span className="req">*</span></span>
-              <input type="text" value={form.password} onChange={set('password')} placeholder="8자 이상" maxLength={64} />
-              <span className="field-hint">직원에게 전달할 초기 비밀번호입니다.</span>
-            </label>
-            <label className="field">
-              <span>이메일 <span className="muted">(선택)</span></span>
-              <input type="email" value={form.email} onChange={set('email')} placeholder="staff@example.com" maxLength={150} />
-            </label>
-          </>
+          <label className="field">
+            <span>초기 비밀번호 <span className="req">*</span></span>
+            <input type="text" value={form.password} onChange={set('password')} placeholder="8자 이상" maxLength={64} />
+            <span className="field-hint">직원에게 전달할 초기 비밀번호입니다.</span>
+          </label>
         )}
 
         <div className="field-row">
@@ -214,7 +239,7 @@ function StaffDialog({ tid, staff, onClose, onSaved, onError }) {
 
         <div className="dialog-actions">
           <button className="btn-ghost" onClick={onClose}>취소</button>
-          <button className="btn-primary" onClick={save} disabled={saving}>{saving ? '저장 중…' : '저장'}</button>
+          <button className="btn-primary" onClick={save} disabled={saving || (!editing && (emailCheck.status === 'dup' || emailCheck.status === 'checking'))}>{saving ? '저장 중…' : '저장'}</button>
         </div>
       </div>
     </div>

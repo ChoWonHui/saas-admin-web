@@ -117,6 +117,8 @@ export const tenantTableApi = {
   list: () => tenantApiCall('/api/tenant/tables'),
   create: (body) => tenantApiCall('/api/tenant/tables', { method: 'POST', body }),
   remove: (tableId) => tenantApiCall(`/api/tenant/tables/${tableId}`, { method: 'DELETE' }),
+  // QR 이 담은 주문 링크(복사·공유용) → { url }
+  orderUrl: (tableId) => tenantApiCall(`/api/tenant/tables/${tableId}/order-url`),
   // QR PNG → object URL. 인증 헤더가 필요해 blob 으로 직접 받는다.
   qr: async (tableId) => {
     const run = () => fetch(`/api/tenant/tables/${tableId}/qr`, {

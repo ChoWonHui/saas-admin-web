@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom'
 import { adminPath } from '../adminBase'
 import { useAuth } from '../auth/AuthContext'
 import { useMenus } from './useMenus'
+import AdminNotiBell from './AdminNotiBell'
 
 // 메뉴 API 가 죽어도 콘솔은 다녀야 한다. 그때만 쓰는 최소한의 기본 메뉴.
 const FALLBACK_MENUS = [
@@ -129,6 +130,7 @@ export default function Shell({ children }) {
           </nav>
         </div>
         <div className="topbar-right">
+          <AdminNotiBell />
           <span className="who">
             {user?.name}({user?.empNo})
           </span>

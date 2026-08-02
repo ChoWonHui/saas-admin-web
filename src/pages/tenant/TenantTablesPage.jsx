@@ -22,6 +22,10 @@ export default function TenantTablesPage() {
   const [reloadKey, setReloadKey] = useState(0) // 새로고침 시 편집기를 다시 마운트한다
   const [packagingMode, setPackagingMode] = useState('none') // 포장 섹션이 편집기의 포장 상태를 제어한다
   const [takeoutQrOpen, setTakeoutQrOpen] = useState(false)
+  const [qrSearch, setQrSearch] = useState('')
+  const [qrFloor, setQrFloor] = useState(1)
+  const [qrView, setQrView] = useState('list') // 'list' | 'grid'
+  const [qrSheet, setQrSheet] = useState(null) // 미리보기 시트를 열 테이블
   const editorRef = useRef(null)
 
   const reloadInfo = useCallback(() => {
@@ -60,10 +64,33 @@ export default function TenantTablesPage() {
     return { count, rooms, avg: Math.round(avg * 10) / 10, floors: layout?.floorCount || 1, takeout }
   }, [tables, layout])
 
+  // 테이블 QR 탭 — 층·검색으로 좁힌 목록
+  const qrFloors = useMemo(() => [...new Set(tables.map((t) => t.floorNo))].sort((a, b) => a - b), [tables])
+  const activeQrFloor = qrFloors.includes(qrFloor) ? qrFloor : (qrFloors[0] ?? 1)
+  const qrList = useMemo(() => {
+    const q = qrSearch.trim()
+    return tables
+      .filter((t) => t.floorNo === activeQrFloor)
+      .filter((t) => !q || `${t.label || ''} ${t.seats}`.includes(q))
+  }, [tables, activeQrFloor, qrSearch])
+
+  // QR PNG 즉시 저장(카드의 "저장"). 필요할 때만 이미지를 받아 내려받는다.
+  async function saveQrPng(table) {
+    try {
+      const url = await tenantTableApi.qr(table.tableId)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `qr-${table.label || table.tableId}.png`
+      document.body.appendChild(a); a.click(); a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 4000)
+    } catch (e) { setError(e.message) }
+  }
+
   return (
     <TenantShell>
       <div className="m-topline m-topline-sticky">
         <div className="m-page-head">
+          <span className="m-eyebrow"><Icon name="table_restaurant" /> TABLE MANAGEMENT</span>
           <h1>테이블 관리</h1>
           <p>가게 자리를 배치하고, 테이블마다 주문용 QR 코드를 생성하세요.</p>
         </div>
@@ -174,20 +201,19 @@ export default function TenantTablesPage() {
         </section>
       </div>
 
-      {/* 테이블 QR 탭 */}
-      <div style={{ display: tab === 'qr' ? 'flex' : 'none', flexDirection: 'column', gap: 24 }}>
+      {/* 테이블 QR 탭 — 검색 → 층 선택 → 카드 목록 → 미리보기 시트 */}
+      <div style={{ display: tab === 'qr' ? 'flex' : 'none', flexDirection: 'column', gap: 18 }}>
         <div className="m-section-head">
           <span className="m-step">2</span>
           <div className="m-section-title">
             <h2>테이블 QR</h2>
-            <p>테이블마다 QR을 내려받거나 한 번에 인쇄하세요.</p>
+            <p>테이블을 찾아 QR을 확인·저장하세요.</p>
           </div>
           <span className="m-spacer" />
-          {tables.length > 0 && (
-            <button type="button" className="m-btn m-btn-outline2" onClick={() => window.print()}>
-              <Icon name="print" /> 전체 인쇄
-            </button>
-          )}
+          <div className="tq-viewtoggle" role="tablist" aria-label="보기 방식">
+            <button type="button" className={qrView === 'list' ? 'on' : ''} onClick={() => setQrView('list')} aria-label="목록 보기"><Icon name="view_list" /></button>
+            <button type="button" className={qrView === 'grid' ? 'on' : ''} onClick={() => setQrView('grid')} aria-label="격자 보기"><Icon name="grid_view" /></button>
+          </div>
         </div>
 
         {layout === null ? (
@@ -199,9 +225,28 @@ export default function TenantTablesPage() {
             <p>자리 배치에서 테이블을 놓고 저장하면 QR이 생깁니다.</p>
           </div>
         ) : (
-          <div className="m-qr-grid">
-            {tables.map((t) => <QrCard key={t.tableId} table={t} onError={setError} />)}
-          </div>
+          <>
+            <div className="tq-controls">
+              <div className="tq-search">
+                <Icon name="search" />
+                <input value={qrSearch} onChange={(e) => setQrSearch(e.target.value)} placeholder="테이블 번호 검색" />
+              </div>
+              {qrFloors.length > 1 && (
+                <select className="tq-floor" value={activeQrFloor} onChange={(e) => setQrFloor(Number(e.target.value))}>
+                  {qrFloors.map((f) => <option key={f} value={f}>{f}층</option>)}
+                </select>
+              )}
+            </div>
+
+            <div className={`tq-cards ${qrView}`}>
+              {qrList.map((t) => (
+                <QrTableCard key={t.tableId} table={t} onView={() => setQrSheet(t)} onSave={() => saveQrPng(t)} />
+              ))}
+              {qrList.length === 0 && (
+                <div className="tq-empty">‘{qrSearch}’에 해당하는 테이블이 없습니다.</div>
+              )}
+            </div>
+          </>
         )}
       </div>
 
@@ -209,38 +254,99 @@ export default function TenantTablesPage() {
         <TakeoutQrModal loadQr={loadTakeoutQr} onClose={() => setTakeoutQrOpen(false)} onError={setError} />
       )}
 
+      {qrSheet && (
+        <QrSheet table={qrSheet} onClose={() => setQrSheet(null)} onError={setError} />
+      )}
+
       <Toast message={error} onClose={() => setError('')} />
     </TenantShell>
   )
 }
 
-function QrCard({ table, onError }) {
-  const [src, setSrc] = useState(null)
-  useEffect(() => {
-    let url
-    tenantTableApi.qr(table.tableId)
-      .then((u) => { url = u; setSrc(u) })
-      .catch((e) => onError(e.message))
-    return () => { if (url) URL.revokeObjectURL(url) }
-  }, [table.tableId, onError])
-
+// 테이블 카드 — QR 은 미리 그리지 않고, 이름·좌석·상태 + [보기]/[저장] 만 보여준다.
+function QrTableCard({ table, onView, onSave }) {
   const name = table.label || (table.kind === 'ROOM' ? '룸' : '테이블')
-  const fileName = `qr-${(table.label || table.tableId)}.png`
-
   return (
-    <div className="m-card m-qr-card">
-      <div className="m-qr-head">
-        <span className="m-qr-name">{name}</span>
-        <span className="m-qr-sub">{table.floorNo}층 · {table.kind === 'ROOM' ? '룸 ' : ''}{table.seats}인</span>
+    <div className="tq-card">
+      <div className="tq-card-info">
+        <span className="tq-card-name">{name}</span>
+        <span className="tq-card-seats">{table.kind === 'ROOM' ? '룸 · ' : ''}{table.seats}인석</span>
+        <span className="tq-card-status"><i className="tq-dot" /> QR 생성 완료</span>
       </div>
-      <div className="m-qr-img">
-        {src ? <img src={src} alt={`${name} 주문 QR`} /> : <span className="m-center-pad">생성 중…</span>}
+      <div className="tq-card-actions">
+        <button type="button" className="tq-btn" onClick={onView}><Icon name="visibility" /> 보기</button>
+        <button type="button" className="tq-btn ghost" onClick={onSave}><Icon name="download" /> 저장</button>
       </div>
-      {src && (
-        <a className="m-qr-dl" href={src} download={fileName}>
-          <Icon name="download" /> PNG 저장
-        </a>
-      )}
     </div>
   )
+}
+
+// QR 미리보기 시트 — 큰 QR + PNG 저장/인쇄/링크 복사/공유. (모바일=바텀시트, 데스크톱=모달)
+function QrSheet({ table, onClose, onError }) {
+  const [src, setSrc] = useState(null)
+  const [url, setUrl] = useState('')
+  const [copied, setCopied] = useState(false)
+  useEffect(() => {
+    let obj; let alive = true
+    tenantTableApi.qr(table.tableId).then((u) => { if (alive) { obj = u; setSrc(u) } }).catch((e) => onError(e.message))
+    tenantTableApi.orderUrl(table.tableId).then((r) => { if (alive) setUrl(r?.url || '') }).catch(() => {})
+    return () => { alive = false; if (obj) URL.revokeObjectURL(obj) }
+  }, [table.tableId, onError])
+  const name = table.label || (table.kind === 'ROOM' ? '룸' : '테이블')
+  function download() {
+    if (!src) return
+    const a = document.createElement('a'); a.href = src; a.download = `qr-${table.label || table.tableId}.png`
+    document.body.appendChild(a); a.click(); a.remove()
+  }
+  function doPrint() { if (src) printImage(src, `${name} 주문 QR`) }
+  async function copyLink() {
+    if (!url) return
+    try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500) }
+    catch { onError('링크 복사에 실패했습니다.') }
+  }
+  async function share() {
+    if (!url) return
+    try {
+      if (navigator.share) await navigator.share({ title: `${name} 주문`, url })
+      else { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500) }
+    } catch { /* 사용자가 공유 취소 */ }
+  }
+  return (
+    <div className="tqsheet-backdrop" onMouseDown={onClose}>
+      <div className="tqsheet" onMouseDown={(e) => e.stopPropagation()}>
+        <span className="tsheet-grip" />
+        <div className="tqsheet-head">
+          <div>
+            <h3>{name}</h3>
+            <p>{table.kind === 'ROOM' ? '룸 · ' : ''}{table.seats}인석 · 주문 QR</p>
+          </div>
+          <button type="button" className="tqsheet-x" onClick={onClose} aria-label="닫기">✕</button>
+        </div>
+        <div className="tqsheet-qr">
+          {src ? <img src={src} alt={`${name} 주문 QR`} /> : <span className="m-center-pad">불러오는 중…</span>}
+        </div>
+        <div className="tqsheet-actions">
+          <button type="button" className="tqa" onClick={download}><Icon name="download" /> PNG 저장</button>
+          <button type="button" className="tqa" onClick={doPrint}><Icon name="print" /> 인쇄</button>
+          <button type="button" className="tqa" onClick={copyLink}><Icon name="link" /> {copied ? '복사됨!' : '링크 복사'}</button>
+          <button type="button" className="tqa" onClick={share}><Icon name="ios_share" /> 공유</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// 숨긴 iframe 으로 QR 한 장만 인쇄한다(팝업 차단 영향 없음).
+function printImage(src, title) {
+  const f = document.createElement('iframe')
+  f.setAttribute('aria-hidden', 'true')
+  f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'
+  document.body.appendChild(f)
+  const d = f.contentWindow.document
+  d.open()
+  d.write(`<html><head><title>${title}</title><style>@page{margin:12mm}body{margin:0;text-align:center;font-family:sans-serif}h2{font-size:16px;margin:0 0 10px}img{width:280px;height:280px}</style></head><body><h2>${title}</h2><img src="${src}"/></body></html>`)
+  d.close()
+  const img = d.querySelector('img')
+  const go = () => { try { f.contentWindow.focus(); f.contentWindow.print() } finally { setTimeout(() => f.remove(), 1000) } }
+  if (img.complete) setTimeout(go, 120); else img.onload = () => setTimeout(go, 120)
 }
