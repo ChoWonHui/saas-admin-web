@@ -7,6 +7,35 @@ import { tenantWaitlistApi } from '../../api/tenantClient'
 
 const tlabel = (t) => t.label || (t.kind === 'ROOM' ? '룸' : '테이블')
 function hhmm(dt) { return dt ? dt.slice(11, 16) : '' }
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
+// 예약 날짜 — "8월 3일 (일)". 요일은 로컬 기준으로 계산.
+function resDate(dt) {
+  if (!dt) return ''
+  const [y, mo, da] = dt.slice(0, 10).split('-').map(Number)
+  if (!y || !mo || !da) return ''
+  const wd = WEEKDAYS[new Date(y, mo - 1, da).getDay()]
+  return `${mo}월 ${da}일 (${wd})`
+}
+// 오늘 날짜(YYYY-MM-DD, 로컬) — date input 의 min·과거 검증에 쓴다.
+function todayStr() {
+  const d = new Date(); const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}
+// 예약 시간은 오전/오후 + 12시간 + 분(00/30) 세 개를 조합해서 고른다(긴 목록 대신 짧게).
+const HOURS12 = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+// 24시간 "HH:mm" ↔ (오전/오후, 12시간, 분)
+function splitTime(t) {
+  if (!t) return { ampm: '오전', hour12: '', minute: '00' }
+  const h24 = Number(t.slice(0, 2))
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12
+  return { ampm: h24 < 12 ? '오전' : '오후', hour12: String(h12), minute: t.slice(3, 5) === '30' ? '30' : '00' }
+}
+function combineTime(ampm, hour12, minute) {
+  if (!hour12) return ''
+  let h = Number(hour12) % 12 // 12시 → 0
+  if (ampm === '오후') h += 12
+  return `${String(h).padStart(2, '0')}:${minute}`
+}
 // 대기표 목록에선 개인정보 보호를 위해 가운데 번호를 가린다. 010-8812-1234 → 010-88**-1234
 function maskPhone(p) {
   if (!p) return ''
@@ -28,6 +57,8 @@ export default function TenantWaitlistPage() {
   const [board, setBoard] = useState(null)
   const [error, setError] = useState('')
   const [adding, setAdding] = useState(null) // 'RESERVATION' | 'WAITING' | null
+  const [editRsv, setEditRsv] = useState(null) // 수정할 예약 항목
+  const [contactFor, setContactFor] = useState(null) // 전화/문자 선택 대상 번호
 
   const load = useCallback(async () => {
     try { setBoard(await tenantWaitlistApi.board()) }
@@ -38,7 +69,6 @@ export default function TenantWaitlistPage() {
   useEffect(() => { const t = setInterval(load, 15000); return () => clearInterval(t) }, [load])
 
   async function run(fn) { try { await fn(); await load() } catch (e) { setError(e.message) } }
-  const call = (id) => run(() => tenantWaitlistApi.changeStatus(id, 'CALLED'))
   const seat = (id) => run(() => tenantWaitlistApi.changeStatus(id, 'SEATED'))
   const cancel = (id) => run(() => tenantWaitlistApi.cancel(id))
 
@@ -95,14 +125,25 @@ export default function TenantWaitlistPage() {
                   <div key={e.id} className="wl-rcard">
                     <div className="wl-rcard-top">
                       <span className="wl-rcard-badge">예약중</span>
-                      <span className="wl-rcard-time"><Icon name="schedule" />{hhmm(e.reservedAt)}</span>
+                      <span className="wl-rcard-date"><Icon name="event" />{resDate(e.reservedAt)}</span>
                     </div>
-                    <div className="wl-rcard-name">{e.partyName || '손님'}</div>
+                    <div className="wl-rcard-timerow">
+                      <div className="wl-rcard-bigtime"><Icon name="schedule" filled />{hhmm(e.reservedAt)}</div>
+                      <button className="wl-btn-edit wl-edit-inline" onClick={() => setEditRsv(e)}><Icon name="edit" />수정</button>
+                    </div>
+                    <div className="wl-rcard-nameline">
+                      <span className="wl-rcard-name">{e.partyName || '손님'}</span>
+                      {e.phone && (
+                        <button type="button" className="wl-rcard-phone" onClick={() => setContactFor(e.phone)}>
+                          <Icon name="call" />{maskPhone(e.phone)}
+                        </button>
+                      )}
+                    </div>
                     <div className="wl-rcard-meta">
                       {[[e.floorNo ? `${e.floorNo}층` : null, e.tableLabel].filter(Boolean).join(' '), `${e.partySize}명`].filter(Boolean).join(' · ')}
                     </div>
                     <div className="wl-cbtns">
-                      <button className="wl-btn-seat" onClick={() => seat(e.id)}>착석</button>
+                      <button className="wl-btn-seat" onClick={() => seat(e.id)}><Icon name="chair" />착석</button>
                       <button className="wl-btn-cancel" onClick={() => cancel(e.id)}>취소</button>
                     </div>
                   </div>
@@ -136,8 +177,8 @@ export default function TenantWaitlistPage() {
                       <span><Icon name="group" />{e.partySize}명</span>
                       <span><Icon name="schedule" />{hhmm(e.createdAt)} 접수</span>
                     </div>
-                    {e.status === 'WAITING' && (
-                      <button className="wl-btn-call" onClick={() => call(e.id)}><Icon name="campaign" /> 호출하기</button>
+                    {e.phone && (
+                      <button className="wl-btn-call" onClick={() => setContactFor(e.phone)}><Icon name="campaign" /> 호출하기</button>
                     )}
                     <div className="wl-cbtns">
                       <button className="wl-btn-seat" onClick={() => seat(e.id)}>착석</button>
@@ -152,8 +193,31 @@ export default function TenantWaitlistPage() {
       )}
 
       {adding && <AddDialog type={adding} board={board} onClose={() => setAdding(null)} onSaved={async () => { setAdding(null); await load() }} onError={setError} />}
+      {editRsv && <ReservationDialog board={board} entry={editRsv} onClose={() => setEditRsv(null)} onSaved={async () => { setEditRsv(null); await load() }} onError={setError} />}
+      {contactFor && <ContactSheet phone={contactFor} onClose={() => setContactFor(null)} />}
       <Toast message={error} onClose={() => setError('')} />
     </TenantShell>
+  )
+}
+
+// 연락처 클릭 시 — 전화 걸기 / 문자 보내기 선택.
+function ContactSheet({ phone, onClose }) {
+  const tel = String(phone).replace(/[^0-9+]/g, '')
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="contact-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="contact-sheet-head">
+          <span className="contact-sheet-num"><Icon name="call" />{phone}</span>
+        </div>
+        <a className="contact-opt call" href={`tel:${tel}`} onClick={onClose}>
+          <Icon name="call" filled /> 전화 걸기
+        </a>
+        <a className="contact-opt sms" href={`sms:${tel}`} onClick={onClose}>
+          <Icon name="chat" filled /> 문자 보내기
+        </a>
+        <button type="button" className="contact-opt cancel" onClick={onClose}>취소</button>
+      </div>
+    </div>
   )
 }
 
@@ -164,30 +228,51 @@ function AddDialog({ type, board, onClose, onSaved, onError }) {
     : <WaitingDialog onClose={onClose} onSaved={onSaved} onError={onError} />
 }
 
-// 예약 추가 — 층 선택 + 테이블 카드(인석·상태) + 예약 일자/시간 + 예약자 이름.
-function ReservationDialog({ board, onClose, onSaved, onError }) {
+// 예약 추가/수정 — 예약 일자/시간(30분 단위) + 예약자 이름·연락처 + 테이블 카드(인석·상태).
+function ReservationDialog({ board, entry, onClose, onSaved, onError }) {
+  const editing = !!entry
   const floorCount = board?.floorCount || 1
   const tables = board?.tables || []
-  const [floor, setFloor] = useState(1)
-  const [tableId, setTableId] = useState(null)
-  const [date, setDate] = useState('')
-  const [time, setTime] = useState('')
-  const [partyName, setPartyName] = useState('')
+  const [floor, setFloor] = useState(entry?.floorNo || 1)
+  const [tableId, setTableId] = useState(entry?.tableId ?? null)
+  const [date, setDate] = useState(entry?.reservedAt ? entry.reservedAt.slice(0, 10) : '')
+  const initT = splitTime(entry?.reservedAt ? entry.reservedAt.slice(11, 16) : '')
+  const [ampm, setAmpm] = useState(initT.ampm)
+  const [hour12, setHour12] = useState(initT.hour12)
+  const [minute, setMinute] = useState(initT.minute)
+  const time = combineTime(ampm, hour12, minute)
+  const [partyName, setPartyName] = useState(entry?.partyName || '')
+  const [phone, setPhone] = useState(entry?.phone || '')
   const [busy, setBusy] = useState(false)
 
   const onFloor = tables.filter((t) => t.floorNo === floor)
   const availableCount = onFloor.filter((t) => !t.occupied).length
   const picked = tables.find((t) => t.tableId === tableId)
 
+  const today = todayStr()
+
   async function submit() {
     if (!tableId) { onError('예약할 테이블을 선택하세요.'); return }
     if (!date || !time) { onError('예약 일자와 시간을 입력하세요.'); return }
+    // 날짜+시간을 합쳐 현재 시각보다 이전이면 막는다(오늘이라도 지난 시간은 불가).
+    const when = new Date(`${date}T${time}`)
+    if (Number.isNaN(when.getTime()) || when.getTime() < Date.now()) {
+      onError('현재 시간보다 이전으로는 예약할 수 없습니다.'); return
+    }
+    if (!phone.trim()) { onError('연락처를 입력하세요.'); return }
     setBusy(true)
     try {
-      await tenantWaitlistApi.add({
-        type: 'RESERVATION', tableId, reservedAt: `${date}T${time}`,
-        partyName, partySize: picked?.seats || 2, phone: '', memo: '',
-      })
+      const partySize = picked?.seats || entry?.partySize || 2
+      if (editing) {
+        await tenantWaitlistApi.update(entry.id, {
+          tableId, reservedAt: `${date}T${time}`, partyName, partySize, phone: phone.trim(),
+        })
+      } else {
+        await tenantWaitlistApi.add({
+          type: 'RESERVATION', tableId, reservedAt: `${date}T${time}`,
+          partyName, partySize, phone: phone.trim(), memo: '',
+        })
+      }
       await onSaved()
     } catch (e) { onError(e.message); setBusy(false) }
   }
@@ -197,13 +282,55 @@ function ReservationDialog({ board, onClose, onSaved, onError }) {
       <div className="modal wl-rsv-modal" onClick={(e) => e.stopPropagation()}>
         <div className="wl-rsv-head">
           <div className="wl-rsv-head-txt">
-            <h3>예약 추가</h3>
-            <p>테이블을 선택하고 예약 정보를 입력하세요.</p>
+            <h3>{editing ? '예약 수정' : '예약 추가'}</h3>
+            <p>예약 정보를 입력하고 테이블을 선택하세요.</p>
           </div>
           <button type="button" className="wl-rsv-x" onClick={onClose} aria-label="닫기"><Icon name="close" /></button>
         </div>
 
         <div className="wl-rsv-body">
+          <div className="wl-rsv-field">
+            <span className="wl-rsv-flabel"><Icon name="calendar_today" /> 예약 일자 <b className="req">*</b></span>
+            <input type="date" value={date} min={today} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <div className="wl-rsv-field">
+            <span className="wl-rsv-flabel"><Icon name="schedule" /> 예약 시간 <b className="req">*</b></span>
+            <div className="wl-time-3">
+              <div className="wl-rsv-select">
+                <select value={ampm} onChange={(e) => setAmpm(e.target.value)} aria-label="오전/오후">
+                  <option value="오전">오전</option>
+                  <option value="오후">오후</option>
+                </select>
+                <Icon name="expand_more" className="wl-rsv-caret" />
+              </div>
+              <div className="wl-rsv-select">
+                <select value={hour12} onChange={(e) => setHour12(e.target.value)} aria-label="시">
+                  <option value="" disabled>시</option>
+                  {HOURS12.map((h) => <option key={h} value={h}>{h}시</option>)}
+                </select>
+                <Icon name="expand_more" className="wl-rsv-caret" />
+              </div>
+              <div className="wl-rsv-select">
+                <select value={minute} onChange={(e) => setMinute(e.target.value)} aria-label="분">
+                  <option value="00">00분</option>
+                  <option value="30">30분</option>
+                </select>
+                <Icon name="expand_more" className="wl-rsv-caret" />
+              </div>
+            </div>
+          </div>
+
+          <div className="wl-rsv-row">
+            <div className="wl-rsv-field">
+              <span className="wl-rsv-flabel">예약자 이름 (선택)</span>
+              <input value={partyName} onChange={(e) => setPartyName(e.target.value)} placeholder="예: 홍길동" maxLength={40} />
+            </div>
+            <div className="wl-rsv-field">
+              <span className="wl-rsv-flabel"><Icon name="call" /> 연락처 <b className="req">*</b></span>
+              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="010-0000-0000" maxLength={20} />
+            </div>
+          </div>
+
           {floorCount > 1 && (
             <div className="wl-rsv-field">
               <span className="wl-rsv-flabel">층 선택</span>
@@ -240,28 +367,12 @@ function ReservationDialog({ board, onClose, onSaved, onError }) {
               })}
             </div>
           )}
-
-          <div className="wl-rsv-row">
-            <div className="wl-rsv-field">
-              <span className="wl-rsv-flabel"><Icon name="calendar_today" /> 예약 일자 <b className="req">*</b></span>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-            </div>
-            <div className="wl-rsv-field">
-              <span className="wl-rsv-flabel"><Icon name="schedule" /> 예약 시간 <b className="req">*</b></span>
-              <input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-            </div>
-          </div>
-
-          <div className="wl-rsv-field">
-            <span className="wl-rsv-flabel">예약자 이름 (선택)</span>
-            <input value={partyName} onChange={(e) => setPartyName(e.target.value)} placeholder="예: 홍길동" maxLength={40} />
-          </div>
         </div>
 
         <div className="wl-rsv-foot">
           <button type="button" className="btn-ghost" onClick={onClose} disabled={busy}>취소</button>
           <button type="button" className="btn-primary wl-rsv-submit" onClick={submit} disabled={busy}>
-            <Icon name="check_circle" filled /> {busy ? '처리 중…' : '예약 접수'}
+            <Icon name="check_circle" filled /> {busy ? '처리 중…' : (editing ? '예약 수정' : '예약 접수')}
           </button>
         </div>
       </div>

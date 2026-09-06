@@ -47,6 +47,7 @@ async function send(path, { method = 'GET', body, auth = true } = {}) {
     method,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),
+    cache: 'no-store', // 목록 갱신 시 브라우저 캐시(옛 데이터)로 응답되지 않게.
   })
 }
 
@@ -220,6 +221,7 @@ export const tenantOrderApi = {
 export const tenantWaitlistApi = {
   board: () => tenantApiCall('/api/tenant/waitlist'),
   add: (body) => tenantApiCall('/api/tenant/waitlist', { method: 'POST', body }),
+  update: (id, body) => tenantApiCall(`/api/tenant/waitlist/${id}`, { method: 'PUT', body }),
   changeStatus: (id, status) => tenantApiCall(`/api/tenant/waitlist/${id}/status`, { method: 'PATCH', body: { status } }),
   cancel: (id) => tenantApiCall(`/api/tenant/waitlist/${id}`, { method: 'DELETE' }),
 }

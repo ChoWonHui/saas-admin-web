@@ -1034,10 +1034,23 @@
 .tenant-shell .wl-rcard { display: flex; flex-direction: column; border: 1px solid var(--m-outline-variant); border-radius: 16px; background: var(--m-surface-lowest); overflow: hidden; }
 .tenant-shell .wl-rcard-top { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; background: var(--m-surface-low); border-bottom: 1px solid var(--m-outline-variant); }
 .tenant-shell .wl-rcard-badge { font-size: 12px; font-weight: 700; color: var(--m-primary); background: #ece9ff; padding: 4px 10px; border-radius: 999px; }
-.tenant-shell .wl-rcard-time { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--m-secondary); }
-.tenant-shell .wl-rcard-time .material-symbols-outlined { font-size: 16px; }
-.tenant-shell .wl-rcard-name { font-size: 18px; font-weight: 800; color: var(--m-on-surface); padding: 14px 16px 2px; }
+.tenant-shell .wl-rcard-date { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--m-secondary); }
+.tenant-shell .wl-rcard-date .material-symbols-outlined { font-size: 16px; }
+/* 예약 시간 — 몇 시 예약인지 한눈에 크게. 착석 버튼을 같은 줄 오른쪽에 둔다. */
+.tenant-shell .wl-rcard-timerow { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px 4px; }
+.tenant-shell .wl-rcard-bigtime { display: flex; align-items: center; gap: 8px; font-size: 34px; font-weight: 800; line-height: 1; letter-spacing: -0.01em; color: var(--m-primary); font-variant-numeric: tabular-nums; }
+.tenant-shell .wl-rcard-bigtime .material-symbols-outlined { font-size: 26px; }
+.tenant-shell .wl-btn-edit.wl-edit-inline { flex: none; width: auto; padding: 7px 15px; font-size: 13px; font-weight: 700; border-radius: 9px; align-self: center; }
+.tenant-shell .wl-btn-edit.wl-edit-inline .material-symbols-outlined { font-size: 16px; }
+/* 예약자 이름 + 연락처를 한 줄에. */
+.tenant-shell .wl-rcard-nameline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 16px 2px; }
+.tenant-shell .wl-rcard-name { font-size: 16px; font-weight: 700; color: var(--m-on-surface); }
 .tenant-shell .wl-rcard-meta { font-size: 13.5px; color: var(--m-secondary); font-weight: 600; padding: 0 16px 14px; }
+/* 연락처 — 이름 옆 작은 알약. 누르면 전화/문자 선택. */
+.tenant-shell .wl-rcard-phone { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border: 1px solid var(--m-outline-variant); border-radius: 999px; background: var(--m-surface-lowest); font-size: 12.5px; font-weight: 700; color: var(--m-secondary); cursor: pointer; font-family: inherit; }
+.tenant-shell .wl-rcard-phone:hover { border-color: var(--m-primary); color: var(--m-primary); }
+.tenant-shell .wl-rcard-phone .material-symbols-outlined { font-size: 15px; color: var(--m-secondary); }
+.tenant-shell .wl-rcard-phone:hover .material-symbols-outlined { color: var(--m-primary); }
 
 /* 대기표 카드 */
 .tenant-shell .wl-wcard { position: relative; display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--m-outline-variant); border-radius: 16px; background: var(--m-surface-lowest); overflow: hidden; }
@@ -1056,7 +1069,9 @@
 /* 카드 버튼 */
 .tenant-shell .wl-cbtns { display: flex; gap: 8px; padding: 0 16px 16px; }
 .tenant-shell .wl-wcard .wl-cbtns { padding: 0; }
-.tenant-shell .wl-btn-seat, .tenant-shell .wl-btn-cancel, .tenant-shell .wl-btn-call { border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; padding: 10px 0; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+.tenant-shell .wl-btn-seat, .tenant-shell .wl-btn-cancel, .tenant-shell .wl-btn-call, .tenant-shell .wl-btn-edit { border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; padding: 10px 0; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+.tenant-shell .wl-btn-edit { flex: 1; background: var(--m-surface-lowest); color: var(--m-primary); border: 1px solid var(--m-outline-variant); }
+.tenant-shell .wl-btn-edit .material-symbols-outlined { font-size: 17px; }
 .tenant-shell .wl-btn-seat { flex: 1; background: var(--m-primary); color: #fff; border: 0; }
 .tenant-shell .wl-btn-cancel { flex: 1; background: var(--m-surface-lowest); color: #d13b3b; border: 1px solid var(--m-outline-variant); }
 .tenant-shell .wl-btn-call { position: relative; z-index: 1; width: 100%; background: var(--m-surface-lowest); color: #b45309; border: 1px solid #e6b98f; }
