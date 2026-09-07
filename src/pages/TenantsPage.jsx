@@ -59,7 +59,27 @@ export default function TenantsPage() {
   }, [includeDeleted])
 
   useEffect(() => { load() }, [load])
-  useEffect(() => { tenantApi.plans().then(setPlans).catch(() => {}) }, [])
+  /*
+   * 요금제 선택지는 공통코드 SUBSCRIPTION_PLAN 에서 가져온다.
+   * 코드 관리 화면에서 늘리고 줄일 수 있게 하려는 것이다(사용자 결정 2026-09-06).
+   *
+   * 코드값은 tenant_plan.plan_id 와 같은 번호로 맞춰 두었다(1=FREE, 2=BASIC, 3=PRO).
+   * tenant.plan_id 에는 외래키가 그대로 걸려 있어, 코드에만 있고 tenant_plan 에 없는
+   * 번호를 넣으면 DB 가 막는다. 요금제를 새로 만들 때는 두 곳에 함께 넣어야 한다.
+   */
+  useEffect(() => {
+    codeApi
+      .groups()
+      .then((groups) => {
+        const g = groups.find((x) => x.groupCode === 'SUBSCRIPTION_PLAN')
+        setPlans(
+          (g?.codes ?? [])
+            .filter((c) => c.useYn === 'Y')
+            .map((c) => ({ planId: Number(c.code), name: c.name })),
+        )
+      })
+      .catch(() => {})
+  }, [])
 
   // 우클릭 메뉴: 바깥 클릭·스크롤·Esc 로 닫는다.
   useEffect(() => {

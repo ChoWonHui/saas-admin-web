@@ -4061,14 +4061,60 @@ tr.drop-into td {
 .wl-rsv-submit { flex: 2; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .wl-rsv-submit .material-symbols-outlined { font-size: 19px; }
 
-/* 관리자 — 업체 메뉴 권한 모달 */
+/* 관리자 — 업체 메뉴 정책(메뉴 x 요금제 x 역할)
+   머리가 두 줄이다: 위는 요금제 묶음, 아래는 그 안의 역할 3칸.
+   묶음마다 색을 달리해서 눈이 세로로 흐르지 않게 잡아 준다. */
 .tmp-table { margin: 4px 0 10px; }
 .tmp-table th, .tmp-table td { padding: 7px 10px; }
 .tmp-table input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; }
 .tmp-table input[type="checkbox"]:disabled { cursor: not-allowed; }
-.tmp-actions { white-space: nowrap; text-align: right; }
-
+.tmp-actions { white-space: nowrap; text-align: center; border-left: 1px solid var(--line, #e5e7eb); }
 .tmp-actions .danger { color: #c0343a; }
+.tmp-actions-head { text-align: center; border-left: 1px solid var(--line, #e5e7eb); }
+
+.tmp-name { white-space: nowrap; }
+.tmp-name .material-symbols-outlined {
+  font-size: 19px; vertical-align: -4px; margin-right: 8px; color: var(--primary, #2563eb);
+}
+
+/* 요금제 묶음 머리 — 가운데, 조금 크게. 아래 역할 칸과 같은 색을 쓴다. */
+.tmp-table th.tmp-plan { text-align: center; font-weight: 700; }
+.tmp-table th.tmp-role { text-align: center; font-weight: 600; font-size: 12.5px; }
+.tmp-table td.tmp-cell { text-align: center; }
+
+/* 묶음이 어디서 시작하는지 세로선으로 끊는다. */
+.tmp-table th.tmp-split, .tmp-table td.tmp-split { border-left: 1px solid var(--line, #e5e7eb); }
+
+/* 요금제 색 4가지를 돌려 쓴다. 요금제가 늘어나도 이 안에서 순환한다. */
+.tmp-table .tmp-plan-0 { background: #eff6ff; }
+.tmp-table th.tmp-plan-0 { color: #1d4ed8; }
+.tmp-table .tmp-plan-1 { background: #ecfdf5; }
+.tmp-table th.tmp-plan-1 { color: #047857; }
+.tmp-table .tmp-plan-2 { background: #f5f3ff; }
+.tmp-table th.tmp-plan-2 { color: #6d28d9; }
+.tmp-table .tmp-plan-3 { background: #fff7ed; }
+.tmp-table th.tmp-plan-3 { color: #c2410c; }
+/* 본문 칸은 머리보다 훨씬 옅게. 표가 알록달록해지지 않도록 한다. */
+.tmp-table tbody td.tmp-plan-0 { background: #f8fbff; }
+.tmp-table tbody td.tmp-plan-1 { background: #f7fdfa; }
+.tmp-table tbody td.tmp-plan-2 { background: #fbfaff; }
+.tmp-table tbody td.tmp-plan-3 { background: #fffbf6; }
+/* 머리 두 줄은 색을 직접 칠하므로, 기본 thead 배경이 위로 올라오지 않게 한다. */
+.tmp-table thead th.tmp-plan, .tmp-table thead th.tmp-role { background-clip: padding-box; }
+
+/* 표 아래 한 줄 안내 */
+.tmp-note {
+  display: flex; align-items: center; gap: 8px; margin: 4px 0 0;
+  padding: 11px 14px; border-radius: 8px;
+  background: #eff6ff; color: #1e40af; font-size: 13px;
+}
+.tmp-note .material-symbols-outlined { font-size: 18px; }
+
+/* 편집창 안의 작은 요금제 표 */
+.tmp-mini { margin-top: 6px; }
+.tmp-mini th, .tmp-mini td { padding: 6px 10px; text-align: center; }
+.tmp-mini th:first-child, .tmp-mini td:first-child { text-align: left; }
+.tmp-mini input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; }
 
 /* ===== 매출 통계 뷰(관리자·업체 공용) ===== */
 .stv { display: flex; flex-direction: column; gap: 16px; }
