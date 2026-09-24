@@ -33,13 +33,14 @@ function MenuLink({ item, onNavigate }) {
   )
 }
 
-/** 접근 권한이 있는 메뉴만 남긴다. 슈퍼는 전부. 빈 묶음(하위가 다 걸러진 상위)은 제거. */
+/** 접근 권한이 있는 메뉴만 남긴다. 슈퍼는 전부. 빈 묶음(하위가 다 걸러진 상위)은 제거.
+ *  대시보드(/dashboard)는 '기본' 메뉴라 권한과 무관하게 항상 남긴다. */
 function filterAllowed(items, isSuper, allowedMenuIds) {
   if (isSuper || allowedMenuIds === null) return items // 슈퍼거나 아직 로딩 중이면 그대로
   const walk = (nodes) =>
     nodes
       .map((n) => ({ ...n, children: n.children ? walk(n.children) : [] }))
-      .filter((n) => allowedMenuIds.has(n.id) || (n.children && n.children.length > 0))
+      .filter((n) => n.url === '/dashboard' || allowedMenuIds.has(n.id) || (n.children && n.children.length > 0))
   return walk(items)
 }
 

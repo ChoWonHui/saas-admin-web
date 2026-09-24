@@ -41,6 +41,13 @@ const NEXT = {
 }
 // 결제가 이미 끝난 주문의 취소는 환불을 뜻한다(모의). 조리 전(접수)·조리 중까지만 허용.
 const CANCELLABLE = new Set(['RECEIVED', 'COOKING'])
+// 주문 유형 탭 — 유형으로 먼저 거르고, 그 안에서 아래 상태 필터로 다시 거른다.
+const TYPE_TABS = [
+  { key: 'ALL', label: '전체', icon: 'apps' },
+  { key: 'DINE_IN', label: '테이블', icon: 'table_restaurant' },
+  { key: 'TAKEOUT', label: '포장', icon: 'takeout_dining' },
+  { key: 'PARCEL', label: '택배', icon: 'local_shipping' },
+]
 const FILTERS = [
   { key: 'ALL', label: '전체', color: '#8b8b9a' },
   { key: 'RECEIVED', label: '결제·접수', color: '#f59e0b' },
@@ -66,6 +73,7 @@ function tableTitle(t) { return t.label || (t.kind === 'ROOM' ? '룸' : '테이�
 export default function TenantOrdersPage() {
   const [view, setView] = useState('list')       // 'list' | 'board'(테이블 현황)
   const [filter, setFilter] = useState('ALL')
+  const [typeFilter, setTypeFilter] = useState('ALL') // 유형: ALL | DINE_IN(테이블) | TAKEOUT(포장) | PARCEL(택배)
   const [date, setDate] = useState(todayLocal())  // 조회 날짜(하루치)
   const [page, setPage] = useState(0)             // 0-기반 페이지
   const [pageInfo, setPageInfo] = useState({ totalElements: 0, totalPages: 0 })
@@ -79,10 +87,31 @@ export default function TenantOrdersPage() {
   const [floor, setFloor] = useState(1)
   const [tableModal, setTableModal] = useState(null) // { table, orders }
   const [soldOpen, setSoldOpen] = useState(false)    // 품절 관리 모달
+  const [parcel, setParcel] = useState(null)     // 택배 받기 여부 (null=로딩)
 
-  const load = useCallback(async (f, d, p) => {
+  // 택배 사용 여부 로드
+  useEffect(() => {
+    let alive = true
+    tenantOrderApi.parcelStatus()
+      .then((r) => { if (alive) setParcel(!!r?.enabled) })
+      .catch(() => { if (alive) setParcel(false) })
+    return () => { alive = false }
+  }, [])
+
+  // 택배 받기 on/off 토글
+  async function toggleParcel() {
     try {
-      const res = await tenantOrderApi.list(f, d, p)
+      const r = await tenantOrderApi.setParcel(!parcel)
+      setParcel(!!r?.enabled)
+      setError(`택배 주문 받기를 ${r?.enabled ? '켰습니다' : '껐습니다'}.`)
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  const load = useCallback(async (f, t, d, p) => {
+    try {
+      const res = await tenantOrderApi.list(f, t, d, p)
       setOrders(res.content)
       setPageInfo({ totalElements: res.totalElements, totalPages: res.totalPages })
     } catch (e) { setError(e.message); setOrders([]) }
@@ -95,13 +124,13 @@ export default function TenantOrdersPage() {
   }, [])
 
   // 필터·날짜가 바뀌면 첫 페이지로.
-  useEffect(() => { setPage(0) }, [filter, date])
-  useEffect(() => { if (view === 'list') load(filter, date, page) }, [view, filter, date, page, load])
+  useEffect(() => { setPage(0) }, [filter, typeFilter, date])
+  useEffect(() => { if (view === 'list') load(filter, typeFilter, date, page) }, [view, filter, typeFilter, date, page, load])
   useEffect(() => { if (view === 'board') loadBoard() }, [view, loadBoard])
 
   // 현재 화면을 다시 불러오는 함수를 ref 로 최신 유지(웹소켓 콜백에서 사용).
   const refreshRef = useRef(() => {})
-  refreshRef.current = () => (view === 'board' ? loadBoard() : load(filter, date, page))
+  refreshRef.current = () => (view === 'board' ? loadBoard() : load(filter, typeFilter, date, page))
 
   // 안전망 — 8초마다 자동 새로고침.
   useEffect(() => {
@@ -137,7 +166,7 @@ export default function TenantOrdersPage() {
 
   async function change(order, to) {
     setBusy(order.orderId)
-    try { await tenantOrderApi.changeStatus(order.orderId, to); await load(filter, date, page) }
+    try { await tenantOrderApi.changeStatus(order.orderId, to); await load(filter, typeFilter, date, page) }
     catch (e) { setError(e.message) } finally { setBusy(null) }
   }
 
@@ -172,8 +201,17 @@ export default function TenantOrdersPage() {
           <p>들어온 주문을 확인하고 상태를 진행하세요. <span className="m-nowrap">(새 주문 실시간 알림)</span></p>
         </div>
         <div className="m-topline-actions">
+          <button
+            className="m-btn m-btn-outline2"
+            onClick={toggleParcel}
+            disabled={parcel === null}
+            style={parcel ? { borderColor: 'var(--c-primary, #2f6feb)', color: 'var(--c-primary, #2f6feb)' } : undefined}
+            title="택배 주문 받기 (택배사 발송)"
+          >
+            <Icon name="local_shipping" /> 택배 {parcel === null ? '…' : (parcel ? 'ON' : 'OFF')}
+          </button>
           <button className="m-btn m-btn-outline2" onClick={() => setSoldOpen(true)}><Icon name="remove_shopping_cart" /> 품절 관리</button>
-          <button className="m-btn m-btn-outline2" onClick={() => (view === 'board' ? loadBoard() : load(filter))}><Icon name="refresh" /> 새로고침</button>
+          <button className="m-btn m-btn-outline2" onClick={() => (view === 'board' ? loadBoard() : load(filter, typeFilter, date, page))}><Icon name="refresh" /> 새로고침</button>
         </div>
       </div>
 
@@ -217,6 +255,21 @@ export default function TenantOrdersPage() {
         />
       ) : (
       <>
+      {/* 유형 탭 — 테이블/포장/택배로 먼저 거른다. */}
+      <div className="m-tabs ord-type-tabs" role="tablist">
+        {TYPE_TABS.map((t) => (
+          <button
+            key={t.key}
+            role="tab"
+            aria-selected={typeFilter === t.key}
+            className={`m-tab${typeFilter === t.key ? ' on' : ''}`}
+            onClick={() => setTypeFilter(t.key)}
+          >
+            <Icon name={t.icon} /> {t.label}
+          </button>
+        ))}
+      </div>
+
       <div className="flow-toggle" role="tablist">
         {FILTERS.map((f) => (
           <button

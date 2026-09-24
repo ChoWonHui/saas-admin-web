@@ -208,13 +208,17 @@ export const tenantStaffApi = {
 // 업체 주문 관리.
 export const tenantOrderApi = {
   // 날짜별 페이징 목록 → { content, date, page, size, totalElements, totalPages }
-  list: (status = 'ALL', date = '', page = 0, size = 20) =>
-    tenantApiCall(`/api/tenant/orders?status=${encodeURIComponent(status)}${date ? `&date=${date}` : ''}&page=${page}&size=${size}`),
+  // type: ALL | DINE_IN(테이블) | TAKEOUT(포장) | PARCEL(택배)
+  list: (status = 'ALL', type = 'ALL', date = '', page = 0, size = 20) =>
+    tenantApiCall(`/api/tenant/orders?status=${encodeURIComponent(status)}&type=${encodeURIComponent(type)}${date ? `&date=${date}` : ''}&page=${page}&size=${size}`),
   // 진행 중(활성) 주문 — 테이블 현황판용
   active: () => tenantApiCall('/api/tenant/orders/active'),
   get: (id) => tenantApiCall(`/api/tenant/orders/${id}`),
   create: (body) => tenantApiCall('/api/tenant/orders', { method: 'POST', body }),
   changeStatus: (id, status) => tenantApiCall(`/api/tenant/orders/${id}/status`, { method: 'PATCH', body: { status } }),
+  // 택배 주문 받기 여부 조회/토글 → { enabled }
+  parcelStatus: () => tenantApiCall('/api/tenant/orders/parcel'),
+  setParcel: (enabled) => tenantApiCall('/api/tenant/orders/parcel', { method: 'PATCH', body: { enabled } }),
 }
 
 // 업체 대기(예약) 관리 — 테이블 점유 현황 + 대기 순번 발급/호출/착석/취소.

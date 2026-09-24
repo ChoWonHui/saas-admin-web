@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /console
+Disallow: /api/
+
+Sitemap: https://kanchenjunga.co.kr/sitemap.xml

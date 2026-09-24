@@ -407,3 +407,90 @@ export const tenantApi = {
     return URL.createObjectURL(await res.blob())
   },
 }
+
+// 홈페이지 문의(회사 사이트 /contact 접수분). 업체 문의(inquiryApi)와 다른 게시판이다 —
+// 저쪽은 로그인한 사장님의 1:1 문의고, 이쪽은 로그인 없는 외부 방문자가 남긴 것이다.
+export const homeInquiryApi = {
+  list: ({ siteType = 'ALL', status = 'ALL', page = 0, size = 20 } = {}) =>
+    api(`/api/platform-admin/home-inquiries?${new URLSearchParams({ siteType, status, page, size })}`),
+  get: (id) => api(`/api/platform-admin/home-inquiries/${id}`),
+  // 답변은 이 화면에서 하지 않는다(메일·전화로 처리) — 상태와 메모만 남긴다.
+  changeStatus: (id, status, memo) =>
+    api(`/api/platform-admin/home-inquiries/${id}/status`, { method: 'PATCH', body: { status, memo } }),
+  remove: (id) => api(`/api/platform-admin/home-inquiries/${id}`, { method: 'DELETE' }),
+  // 지금 알림 메일이 나가는 주소들(공통코드 KCJG_CONTACT_EMAIL). 화면 상단 안내에 쓴다.
+  recipients: () => api('/api/platform-admin/home-inquiries/recipients'),
+}
+
+// 홈페이지 공지사항(회사 사이트 /notice 에 나가는 글).
+// 사내 공지(noticeApi)·업체 공지(tenantNoticeApi)와 또 다른 대상이다 — 이쪽은 외부 공개다.
+// published=false 로 저장하면 초안이라 사이트에 나가지 않는다.
+export const homeNoticeApi = {
+  list: ({ published = 'ALL', category = '', keyword = '', page = 0, size = 10 } = {}) =>
+    api(`/api/platform-admin/home-notices?${new URLSearchParams({ published, category, keyword, page, size })}`),
+  get: (id) => api(`/api/platform-admin/home-notices/${id}`),
+  create: (body) => api('/api/platform-admin/home-notices', { method: 'POST', body }),
+  update: (id, body) => api(`/api/platform-admin/home-notices/${id}`, { method: 'PATCH', body }),
+  remove: (id) => api(`/api/platform-admin/home-notices/${id}`, { method: 'DELETE' }),
+  // 말머리 선택지 — 공통코드 KCJG_NOTICE_CATEGORY.
+  categories: () => api('/api/platform-admin/home-notices/categories'),
+}
+
+// 관리자 메일함. 내부 직원이 자기 사번 주소({사번}@kanchenjunga.co.kr)로 주고받는다.
+// 받은 메일은 백엔드가 메일 서버에서 IMAP 으로 가져와 DB 에 쌓아 둔 것을 읽는다.
+export const mailboxApi = {
+  me: () => api('/api/platform-admin/mailbox/me'),
+  folders: () => api('/api/platform-admin/mailbox/folders'),
+  list: ({ folder = 'INBOX', keyword = '', page = 0, size = 20 } = {}) =>
+    api(`/api/platform-admin/mailbox?${new URLSearchParams({ folder, keyword, page, size })}`),
+  get: (id) => api(`/api/platform-admin/mailbox/${id}`),
+  move: (id, folder) => api(`/api/platform-admin/mailbox/${id}/folder`, { method: 'PATCH', body: { folder } }),
+  setStar: (id, starred) => api(`/api/platform-admin/mailbox/${id}/star`, { method: 'PATCH', body: { starred } }),
+  // 휴지통 밖이면 휴지통으로, 휴지통 안이면 완전 삭제.
+  remove: (id) => api(`/api/platform-admin/mailbox/${id}`, { method: 'DELETE' }),
+  saveDraft: (body) => api('/api/platform-admin/mailbox/drafts', { method: 'POST', body }),
+  // 주기 동기화(60초)를 기다리지 않고 즉시 확인. 가져온 통수를 돌려준다.
+  syncNow: () => api('/api/platform-admin/mailbox/sync', { method: 'POST' }),
+
+  // 발송은 첨부가 붙어 멀티파트다 — JSON 헬퍼를 쓰지 않고 직접 보낸다.
+  async send({ to, cc, bcc, subject, content, draftId, files = [] }) {
+    const form = new FormData()
+    form.append('to', to ?? '')
+    if (cc) form.append('cc', cc)
+    if (bcc) form.append('bcc', bcc)
+    form.append('subject', subject ?? '')
+    form.append('content', content ?? '')
+    if (draftId) form.append('draftId', String(draftId))
+    files.forEach((f) => form.append('files', f, f.name))
+    const doSend = () =>
+      fetch('/api/platform-admin/mailbox', {
+        method: 'POST',
+        // Content-Type 은 브라우저가 boundary 와 함께 넣는다 — 직접 지정하지 않는다.
+        headers: tokenStore.access ? { Authorization: `Bearer ${tokenStore.access}` } : {},
+        body: form,
+      })
+    let res = await doSend()
+    if (res.status === 401 && tokenStore.refresh) { if (await refreshAccessToken()) res = await doSend() }
+    if (!res.ok) { if (res.status === 401) tokenStore.clear(); throw new ApiError(res.status, await parse(res)) }
+    return parse(res)
+  },
+
+  // 첨부 내려받기. 인증 헤더가 필요해 <a href> 로 직접 못 걸고 blob 으로 받아 저장한다.
+  async downloadAttachment(mailId, attachmentId, filename) {
+    const doSend = () =>
+      fetch(`/api/platform-admin/mailbox/${mailId}/attachments/${attachmentId}`, {
+        headers: tokenStore.access ? { Authorization: `Bearer ${tokenStore.access}` } : {},
+      })
+    let res = await doSend()
+    if (res.status === 401 && tokenStore.refresh) { if (await refreshAccessToken()) res = await doSend() }
+    if (!res.ok) { if (res.status === 401) tokenStore.clear(); throw new ApiError(res.status, await parse(res)) }
+    const url = URL.createObjectURL(await res.blob())
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename || 'attachment'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  },
+}

@@ -2,6 +2,12 @@
 
 > **EXPRISM** — *We express your vision through innovation.*
 
+이 저장소는 **kanchenjunga.co.kr** 도메인을 서빙한다. 두 가지가 한 빌드에 들어 있다.
+1. **KANCHENJUNGA 회사 소개 사이트** — root(`/`) 와 고정 경로(`/company`, `/company/greeting`, `/company/org`, `/biz-area/consulting`, `/design`, `/notice`, `/notice/:id`, `/contact`).
+   `src/pages/company/*` · `src/components/company/*` · `company.css` · `design.css` · `company-data.js` · `api/homeClient.js`(무인증 공개 API). 2026-09-22 에 saas-client-web 에서 옮겨 왔다.
+2. **관리자 콘솔** — `/admin/*`(업체 콘솔) · `/console/*`(플랫폼 관리). 아래 규칙은 이 콘솔 화면 대상이다.
+> EXPRISM 제품·손님 주문앱(exprism.co.kr)은 **saas-client-web** 이 맡는다.
+
 관리자 콘솔. React 18 + Vite. 백엔드는 `../saas-admin-api` (Spring Boot, :8089).
 
 **브랜드 표기 규칙**: 워드마크는 항상 **대문자 `EXPRISM`** (`.wordmark` — 자간 0.14em).

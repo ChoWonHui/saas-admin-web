@@ -694,11 +694,25 @@ function TenantDialog({ dialog, plans, onClose, onSaved, onError }) {
     postalCode: t?.postalCode ?? '',
     address: t?.address ?? '',
     addressDetail: t?.addressDetail ?? '',
+    bankCode: t?.bankCode ?? '',
+    accountNo: t?.accountNo ?? '',
+    accountHolder: t?.accountHolder ?? '',
   })
   const [saving, setSaving] = useState(false)
+  const [banks, setBanks] = useState([])
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
 
   useEffect(() => { preloadPostcode() }, [])
+
+  // 은행 선택지는 공통코드 BANK_CD 에서 온다. 은행이 늘면 설정 > 공통코드에서 추가하면 된다.
+  useEffect(() => {
+    codeApi.groups()
+      .then((groups) => {
+        const g = groups.find((x) => x.groupCode === 'BANK_CD')
+        setBanks((g?.codes ?? []).filter((c) => c.useYn === 'Y').map((c) => ({ code: c.code, name: c.name })))
+      })
+      .catch(() => setBanks([]))
+  }, [])
   function findAddress() {
     openPostcode(
       ({ zonecode, address }) => setForm((f) => ({ ...f, postalCode: zonecode, address })),
@@ -721,6 +735,9 @@ function TenantDialog({ dialog, plans, onClose, onSaved, onError }) {
         postalCode: form.postalCode,
         address: form.address,
         addressDetail: form.addressDetail,
+        bankCode: form.bankCode,
+        accountNo: form.accountNo,
+        accountHolder: form.accountHolder,
       }
       let created = null
       if (editing) await tenantApi.update(t.tenantId, body)
@@ -786,6 +803,27 @@ function TenantDialog({ dialog, plans, onClose, onSaved, onError }) {
         </div>
         <input className="addr-main" value={form.address} placeholder="주소를 검색하세요" readOnly onClick={findAddress} />
         <input value={form.addressDetail} onChange={set('addressDetail')} placeholder="상세주소" maxLength={255} />
+      </label>
+
+      {/* 입금 계좌 — 요금제가 주문을 막는 가게(FREE)에서 손님 메뉴판에 안내로 뜬다.
+          앱 결제가 없으니 손님이 직접 이체해야 하기 때문이다. */}
+      <div className="field-row">
+        <label className="field">
+          <span>입금 은행</span>
+          <select value={form.bankCode} onChange={set('bankCode')}>
+            <option value="">(선택 안 함)</option>
+            {banks.map((b) => <option key={b.code} value={b.code}>{b.name}</option>)}
+          </select>
+        </label>
+        <label className="field">
+          <span>계좌번호</span>
+          <input value={form.accountNo} onChange={set('accountNo')} placeholder="123456-01-789012" maxLength={50} />
+        </label>
+      </div>
+
+      <label className="field">
+        <span>예금주</span>
+        <input value={form.accountHolder} onChange={set('accountHolder')} placeholder="비우면 업체명으로 안내됩니다" maxLength={50} />
       </label>
 
       <div className="dialog-actions">

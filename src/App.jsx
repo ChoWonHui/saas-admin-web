@@ -7,6 +7,7 @@ import { flattenMenus, useMenus } from './components/useMenus'
 import AdminsPage from './pages/AdminsPage'
 import CalendarPage from './pages/CalendarPage'
 import CodesPage from './pages/CodesPage'
+import AdsPage from './pages/AdsPage'
 import DecorateCatalogPage from './pages/DecorateCatalogPage'
 import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
@@ -18,6 +19,9 @@ import PasswordChangePage from './pages/PasswordChangePage'
 import PermissionsPage from './pages/PermissionsPage'
 import TenantsPage from './pages/TenantsPage'
 import InquiriesPage from './pages/InquiriesPage'
+import HomeInquiriesPage from './pages/HomeInquiriesPage'
+import HomeNoticesPage from './pages/HomeNoticesPage'
+import MailboxPage from './pages/MailboxPage'
 import TenantNoticesPage from './pages/TenantNoticesPage'
 import TenantNoticeBoardPage from './pages/tenant/TenantNoticeBoardPage'
 import TenantLoginPage from './pages/tenant/TenantLoginPage'
@@ -29,6 +33,17 @@ import TenantOrdersPage from './pages/tenant/TenantOrdersPage'
 import TenantWaitlistPage from './pages/tenant/TenantWaitlistPage'
 import TenantStatsPage from './pages/tenant/TenantStatsPage'
 import TenantStaffPage from './pages/tenant/TenantStaffPage'
+// KANCHENJUNGA 회사 소개 사이트 — 이 콘솔 도메인(kanchenjunga.co.kr)의 root(/) 와 고정 경로들.
+// EXPRISM 제품·주문앱(exprism.co.kr)은 saas-client-web 이 맡는다.
+import HomePage from './pages/company/HomePage'
+import AboutPage from './pages/company/AboutPage'
+import GreetingPage from './pages/company/GreetingPage'
+import OrgPage from './pages/company/OrgPage'
+import ConsultingPage from './pages/company/ConsultingPage'
+import DesignPage from './pages/company/DesignPage'
+import NoticePage from './pages/company/NoticePage'
+import NoticeDetailPage from './pages/company/NoticeDetailPage'
+import ContactPage from './pages/company/ContactPage'
 
 // 대시보드는 권한과 무관하게 항상 접근 가능하다 — 권한 없는 URL 에서 튕겨 갈 곳이다.
 const ALWAYS_ALLOWED = ['/dashboard']
@@ -66,11 +81,17 @@ function RequireAuth({ children }) {
   return children
 }
 
-// 루트(/) — 로그인한 관리자만 콘솔 대시보드로 보내고, 그 외엔 접두 경로를 드러내지 않는 담백한 404.
-function RootLanding() {
-  const { user, loading } = useAuth()
-  if (loading) return <div className="boot">확인 중…</div>
-  return user ? <Navigate to={adminPath('/dashboard')} replace /> : <NotFoundPage />
+// 화면 이동 시 맨 위에서 시작(회사 사이트가 company.css 의 smooth 스크롤을 쓰므로 잠깐 auto 로 덮는다).
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    const root = document.documentElement
+    const prev = root.style.scrollBehavior
+    root.style.scrollBehavior = 'auto'
+    window.scrollTo(0, 0)
+    root.style.scrollBehavior = prev
+  }, [pathname])
+  return null
 }
 
 // 업체(tenant) 사용자 전용 가드. 내부 관리자 가드(RequireAuth)와 완전히 별개다.
@@ -86,7 +107,20 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
        <TenantAuthProvider>
+        <ScrollToTop />
         <Routes>
+          {/* KANCHENJUNGA 회사 소개 사이트 — 이 도메인(kanchenjunga.co.kr)의 공개 화면.
+              콘솔(/admin·/console)과 경로가 겹치지 않는 고정 경로들이다. */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/company" element={<AboutPage />} />
+          <Route path="/company/greeting" element={<GreetingPage />} />
+          <Route path="/company/org" element={<OrgPage />} />
+          <Route path="/biz-area/consulting" element={<ConsultingPage />} />
+          <Route path="/design" element={<DesignPage />} />
+          <Route path="/notice" element={<NoticePage />} />
+          <Route path="/notice/:id" element={<NoticeDetailPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+
           {/* 업체 사용자 콘솔 (/admin/*) — 업체코드 + 아이디 + 비밀번호 로그인.
               /admin/login/:code 로 들어오면 업체코드가 자동으로 채워진다(가게 전용 링크·QR). */}
           <Route path="/admin/login" element={<TenantLoginPage />} />
@@ -169,6 +203,8 @@ export default function App() {
             <Route path="login" element={<LoginPage />} />
             <Route path="password" element={<PasswordChangePage />} />
             <Route path="dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />
+            {/* 광고 관리 — 예전엔 대시보드 안에 있던 손님 화면 광고 배너. 권한으로 따로 제어한다. */}
+            <Route path="ads" element={<RequireAuth><AdsPage /></RequireAuth>} />
             <Route path="codes" element={<RequireAuth><CodesPage /></RequireAuth>} />
             <Route path="decorate-catalog" element={<RequireAuth><DecorateCatalogPage /></RequireAuth>} />
             <Route path="menus" element={<RequireAuth><MenusPage /></RequireAuth>} />
@@ -179,13 +215,18 @@ export default function App() {
             <Route path="calendar" element={<RequireAuth><CalendarPage /></RequireAuth>} />
             <Route path="notices" element={<RequireAuth><NoticesPage /></RequireAuth>} />
             <Route path="inquiries" element={<RequireAuth><InquiriesPage /></RequireAuth>} />
+            {/* 홈페이지 문의(회사 사이트 /contact 접수분). 위 inquiries(업체 1:1)와 다른 게시판이다. */}
+            <Route path="home-inquiries" element={<RequireAuth><HomeInquiriesPage /></RequireAuth>} />
+            {/* 회사 사이트(/notice)에 공개되는 공지. 사내 공지(notices)·업체 공지와 대상이 다르다. */}
+            <Route path="home-notices" element={<RequireAuth><HomeNoticesPage /></RequireAuth>} />
+            {/* 관리자 메일함. 받은 메일은 백엔드가 메일 서버에서 IMAP 으로 가져온다. */}
+            <Route path="mailbox" element={<RequireAuth><MailboxPage /></RequireAuth>} />
             <Route path="tenant-notices" element={<RequireAuth><TenantNoticesPage /></RequireAuth>} />
             {/* 접두 경로만 입력하면 대시보드로. 접두 경로 하위 미존재 주소는 NotFound. */}
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
-          {/* 루트/기타 주소: 인증된 관리자만 콘솔로, 그 외엔 담백한 404(접두 경로 비노출). */}
-          <Route path="/" element={<RootLanding />} />
+          {/* 위에서 안 잡힌 주소는 담백한 404(콘솔 접두 경로 비노출). */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
        </TenantAuthProvider>

@@ -179,7 +179,9 @@ export default function CodesPage() {
                         <th>이름</th>
                         <th>코드</th>
                         <th>사용</th>
-                        <th className="col-grow">순서</th>
+                        <th>순서</th>
+                        <th>비고</th>
+                        <th className="col-grow">비고2</th>
                       </tr>
                     </thead>
                     <tbody ref={tbodyRef}>
@@ -209,11 +211,13 @@ export default function CodesPage() {
                             </span>
                           </td>
                           <td className="muted-cell">{code.sortOrder}</td>
+                          <td className="muted-cell code-remark" title={code.remark || ''}>{code.remark}</td>
+                          <td className="muted-cell code-remark" title={code.remark2 || ''}>{code.remark2}</td>
                         </tr>
                       ))}
                       {currentGroup.codes.length === 0 && (
                         <tr>
-                          <td colSpan={4} className="muted-cell">
+                          <td colSpan={6} className="muted-cell">
                             소분류가 없습니다. 오른쪽 위 + 소분류 추가로 만드세요.
                           </td>
                         </tr>
@@ -288,6 +292,8 @@ function CodeDialog({ dialog, onClose, onSaved, onError }) {
     description: group?.description ?? '',
     sortOrder: code?.sortOrder ?? '',
     useYn: code?.useYn ?? 'Y',
+    remark: code?.remark ?? '',
+    remark2: code?.remark2 ?? '',
   })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -360,12 +366,16 @@ function CodeDialog({ dialog, onClose, onSaved, onError }) {
           code: form.code.trim().toUpperCase(),
           name: form.name,
           sortOrder: form.sortOrder === '' ? undefined : Number(form.sortOrder),
+          remark: form.remark || undefined,
+          remark2: form.remark2 || undefined,
         })
       } else {
         await codeApi.updateCode(code.id, {
           name: form.name,
           sortOrder: form.sortOrder === '' ? undefined : Number(form.sortOrder),
           useYn: form.useYn,
+          remark: form.remark || undefined,
+          remark2: form.remark2 || undefined,
         })
       }
       await onSaved(keepGroup)
@@ -458,6 +468,29 @@ function CodeDialog({ dialog, onClose, onSaved, onError }) {
               </label>
             )}
           </div>
+        )}
+
+        {!mode.includes('Group') && (
+          <>
+            <label className="field">
+              <span>비고 (선택 · 자유 메모/부가값)</span>
+              <input
+                value={form.remark}
+                onChange={(e) => setForm({ ...form, remark: e.target.value })}
+                maxLength={500}
+                placeholder="예: 메모 · URL 등 부가값"
+              />
+            </label>
+            <label className="field">
+              <span>비고2 (선택 · 자유 메모/부가값)</span>
+              <input
+                value={form.remark2}
+                onChange={(e) => setForm({ ...form, remark2: e.target.value })}
+                maxLength={500}
+                placeholder="예: 메모 · URL 등 부가값"
+              />
+            </label>
+          </>
         )}
 
         <div className="dialog-actions">

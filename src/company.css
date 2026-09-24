@@ -1,0 +1,1209 @@
+/**
+ * KANCHENJUNGA 회사 사이트 전용 스타일.
+ *
+ * EXPRISM(saas-admin-web) 의 규약을 그대로 따른다:
+ *   - CSS 프레임워크를 도입하지 않는다. (원본은 Tailwind CDN 을 썼는데, 그건 브라우저에서
+ *     컴파일하는 개발용이라 운영에 쓰면 첫 화면이 느리고 콘솔 경고가 뜬다)
+ *   - 색·간격은 이 파일 위쪽 변수만 쓴다. 새 색을 즉흥적으로 만들지 않는다.
+ *   - 클래스는 기능별 접두어로 충돌을 피한다. 여기서는 kc- (KanChenjunga).
+ *
+ * index.css 와 분리한 이유: index.css 는 EXPRISM 손님 주문앱(모바일 전용)의 스타일이다.
+ * 회사 사이트는 데스크톱까지 보는 다른 화면이라 토큰이 겹치지 않는다.
+ */
+
+.kc {
+  /* EXPRISM 관리자 콘솔의 --accent(#2f6feb) 를 기준으로 잡았다. 원본 사이트의 파랑과도 같은 계열이다. */
+  --kc-accent: #2f6feb;
+  --kc-accent-strong: #2559c4;
+  --kc-accent-soft: #eef3fd;
+  --kc-ink: #0a192f;          /* 히어로 오버레이 색. 원본 rgba(10,25,47,.7) 에서 가져왔다 */
+  --kc-ink-2: #101c33;
+  --kc-text: #1c2024;
+  --kc-text-2: #4b5563;
+  --kc-text-3: #6b7280;
+  --kc-line: #e3e6ea;
+  --kc-bg: #f5f6f8;
+  --kc-surface: #ffffff;
+  --kc-surface-2: #fafbfc;
+  --kc-shadow: 0 8px 28px rgb(20 25 35 / 8%);
+  --kc-shadow-lg: 0 18px 44px rgb(17 28 61 / 12%);
+  --kc-wrap: 1200px;
+  --kc-head-h: 72px;
+
+  /* 모서리 반경은 세 값만 쓴다. 새 값을 즉흥적으로 만들면 같은 화면에
+     둥근 버튼과 각진 카드가 섞여 어긋나 보인다.
+       --kc-r    면(카드·패널·이미지)
+       --kc-r-s  조작 요소(버튼·입력칸)
+       999px     알약(배지)만. 그 외에는 쓰지 않는다 */
+  --kc-r: 14px;
+  --kc-r-s: 8px;
+
+  /* 세로 리듬. 섹션 여백을 눈대중으로 정하지 않는다. */
+  --kc-gap-sec: clamp(72px, 8vw, 120px);
+  --kc-gap-head: clamp(36px, 4vw, 56px);
+
+  background: var(--kc-surface);
+  color: var(--kc-text);
+  /* Pretendard 를 먼저 둔다. Inter 는 라틴만 그리므로 한글은 결국 시스템 글꼴이 그렸고,
+     그래서 문장 안에서 라틴과 한글의 굵기가 어긋나 보였다. */
+  font-family: 'Pretendard Variable', Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+
+  /* 한국어 줄바꿈. 기본값은 글자 단위로 끊어서 "…워크숍 개 / 최" 처럼
+     낱글자 하나만 다음 줄로 넘어간다. keep-all 로 어절(띄어쓰기) 단위로 끊는다.
+     대신 한 어절이 칸보다 길면 넘칠 수 있어 overflow-wrap 으로 그때만 강제로 끊는다. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* :where 로 감싸 명시도를 0 으로 만든다.
+   `.kc a` 로 쓰면 요소 선택자가 붙어 .kc-logo / .kc-btn 같은 단일 클래스보다 명시도가 높아지고,
+   color:inherit 가 그 색들을 덮어써 어두운 배경에 어두운 글자가 된다. 실제로 겪었다. */
+.kc :where(a) { color: inherit; text-decoration: none; }
+.kc :where(h1, h2, h3, h4, p, ul, ol, dl, dd, figure) { margin: 0; }
+.kc :where(ul, ol) { padding: 0; list-style: none; }
+.kc :where(img) { max-width: 100%; display: block; }
+
+/* 앵커로 이동할 때 고정 헤더에 제목이 가리지 않게. 실제로 스크롤되는 건 html 이라 .kc 에 걸면 듣지 않는다.
+   :has 로 이 사이트가 떠 있을 때만 적용해 주문앱 화면에는 영향을 주지 않는다. */
+html:has(.kc) { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html:has(.kc) { scroll-behavior: auto; } }
+.kc section[id] { scroll-margin-top: calc(var(--kc-head-h) + 12px); }
+
+.kc-wrap { width: 100%; max-width: var(--kc-wrap); margin: 0 auto; padding: 0 24px; }
+
+/* ===== 버튼 ===== */
+
+.kc-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 50px; padding: 0 26px; border: 1px solid transparent; border-radius: var(--kc-r-s);
+  font-size: 15px; font-weight: 700; white-space: nowrap; cursor: pointer;
+  transition: background-color .14s, border-color .14s, color .14s;
+}
+.kc-btn .material-symbols-outlined { font-size: 20px; }
+.kc-btn-primary { background: var(--kc-accent); color: #fff; }
+.kc-btn-primary:hover { background: var(--kc-accent-strong); }
+.kc-btn-primary:disabled { opacity: .6; cursor: default; }
+.kc-btn-ghost { border-color: rgba(255, 255, 255, .45); color: #fff; }
+.kc-btn-ghost:hover { background: rgba(255, 255, 255, .12); border-color: #fff; }
+.kc-btn-line { border-color: var(--kc-line); background: var(--kc-surface); color: var(--kc-text); }
+.kc-btn-line:hover { border-color: var(--kc-accent); color: var(--kc-accent); }
+
+/* EXPRISM 화면의 주 버튼은 로고와 같은 보라에서 파랑으로 넘어가는 색을 쓴다.
+   회사 사이트(kanchenjunga.co.kr)는 그대로 단색이므로 여기서만 덮어쓴다. */
+.ex-hero .kc-btn-primary, .ex-dock .kc-btn-primary {
+  background: linear-gradient(112deg, #7c3aed 0%, #4f46e5 46%, #2563eb 100%);
+  box-shadow: 0 10px 26px rgb(79 70 229 / 42%);
+}
+.ex-hero .kc-btn-primary:hover, .ex-dock .kc-btn-primary:hover {
+  background: linear-gradient(112deg, #6d28d9 0%, #4338ca 46%, #1d4ed8 100%);
+}
+/* 짙은 바탕의 보조 버튼. 테두리만 있으면 비어 보여서 옅은 면을 깐다. */
+.ex-hero .kc-btn-ghost {
+  background: rgb(255 255 255 / 8%); border-color: rgb(255 255 255 / 30%);
+}
+.ex-hero .kc-btn-ghost:hover { background: rgb(255 255 255 / 16%); border-color: rgb(255 255 255 / 60%); }
+
+/* ===== 헤더 ===== */
+
+/* 헤더 배경 전환을 판단하는 감지용 요소. 보이지 않고 자리도 차지하지 않는다.
+   (SiteShell.jsx 의 IntersectionObserver 참조) */
+.kc-top-sentinel { position: absolute; top: 0; left: 0; width: 1px; height: 9px; pointer-events: none; }
+
+.kc-head {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  height: var(--kc-head-h);
+  transition: background-color .25s, box-shadow .25s;
+}
+/* 히어로가 있는 화면은 처음엔 투명하게 얹히고, 스크롤하면 흰 배경으로 바뀐다.
+   히어로가 없는 화면(.is-solid 고정)은 처음부터 흰 배경이어야 글자가 보인다. */
+.kc-head.is-solid { background: var(--kc-surface); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 8%); }
+.kc-head-inner {
+  max-width: var(--kc-wrap); margin: 0 auto; padding: 0 24px; height: 100%;
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+}
+
+/* 워드마크는 항상 대문자 + 자간을 벌려 로고처럼 읽히게 한다 (EXPRISM .wordmark 규칙과 같다). */
+.kc-logo { display: flex; flex-direction: column; gap: 1px; flex-shrink: 0; }
+/* 회사 로고 — 투명 산 아이콘 + 워드마크 텍스트(span). */
+.kc-logo-icon-kc { height: 40px; width: auto; display: block; flex: none; }
+/* 푸터(어두운 바탕) — 아이콘 + 흰 워드마크가 든 조합 로고(투명).
+   데스크톱은 125px 로 크게, 모바일은 화면 폭에 맞춰 줄어든다(90~125px). */
+/* 두 클래스로 우선순위를 올려, 뒤에 오는 .kc-foot-logo(height:22px)에 덮이지 않게 한다. */
+.kc-foot-logo.kc-foot-logo-kc { height: clamp(90px, 26vw, 125px); width: auto; max-width: 100%; margin-bottom: 16px; }
+.kc-logo-mark { font-family: 'Montserrat', 'Hanken Grotesk', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: .08em; color: #fff; line-height: 1; }
+.kc-logo-sub { font-size: 9.5px; letter-spacing: .26em; color: #fff; line-height: 1; }
+.kc-head.is-solid .kc-logo-mark { color: #001653; }
+.kc-head.is-solid .kc-logo-sub { color: #001653; }
+
+/* 제품(EXPRISM) 로고 자물쇠.
+   아이콘 + 워드마크 + 회사명 한 줄. 상단바 높이가 72px 이라 아이콘은 30px 로 잡는다. */
+.kc-logo-lockup { display: flex; align-items: center; gap: 11px; }
+.kc-logo-icon { width: auto; height: 32px; display: block; }
+.kc-logo-text { display: flex; flex-direction: column; gap: 2px; }
+/* 워드마크 두 벌(흰 글자·남색 글자)을 같은 자리에 겹쳐 두고 상단바 상태에 따라 갈아 끼운다.
+   따로 놓으면 상태가 바뀔 때 폭이 흔들린다. */
+.kc-logo-words { position: relative; display: block; height: 17px; }
+.kc-logo-word { display: block; width: auto; height: 17px; }
+.kc-logo-word-dark { position: absolute; left: 0; top: 0; opacity: 0; }
+.kc-head.is-solid .kc-logo-word-light { opacity: 0; }
+.kc-head.is-solid .kc-logo-word-dark { opacity: 1; }
+.kc-logo-word-light, .kc-logo-word-dark { transition: opacity .25s; }
+/* 드로어·푸터처럼 한 가지 바탕만 쓰는 곳은 한 벌만 놓는다. */
+.kc-logo-word-solo { height: 18px; width: auto; display: block; }
+.kc-foot-logo { height: 22px; width: auto; display: block; margin-bottom: 14px; }
+
+/* 창이 좁아져도 상단바 글자는 줄바꿈되지 않는다 — 좁아지면 줄바꿈이 아니라 햄버거로 전환한다. */
+.kc-nav { display: flex; align-items: center; gap: 30px; }
+.kc-nav > a { font-size: 15px; font-weight: 600; white-space: nowrap; color: rgba(255, 255, 255, .82); transition: color .14s; }
+.kc-nav > a:hover, .kc-nav > a.on { color: #fff; }
+.kc-head.is-solid .kc-nav > a { color: var(--kc-text-2); }
+.kc-head.is-solid .kc-nav > a:hover, .kc-head.is-solid .kc-nav > a.on { color: var(--kc-accent); }
+
+/* 상위 메뉴(자식이 있는 것). 마우스를 올리거나 자식에 포커스가 가면 펼쳐진다. */
+.kc-nav-group { position: relative; }
+.kc-nav-parent {
+  display: inline-flex; align-items: center; gap: 2px; cursor: default;
+  font-size: 15px; font-weight: 600; white-space: nowrap;
+  color: rgba(255, 255, 255, .82); transition: color .14s;
+}
+.kc-nav-parent .material-symbols-outlined { font-size: 18px; transition: transform .18s; }
+.kc-nav-group:hover .kc-nav-parent, .kc-nav-parent.on { color: #fff; }
+.kc-nav-group:hover .kc-nav-parent .material-symbols-outlined { transform: rotate(180deg); }
+.kc-head.is-solid .kc-nav-parent { color: var(--kc-text-2); }
+.kc-head.is-solid .kc-nav-group:hover .kc-nav-parent,
+.kc-head.is-solid .kc-nav-parent.on { color: var(--kc-accent); }
+
+.kc-nav-drop {
+  position: absolute; top: 100%; left: 50%; transform: translateX(-50%) translateY(-6px);
+  min-width: 168px; padding: 8px; border-radius: var(--kc-r);
+  background: var(--kc-surface); border: 1px solid var(--kc-line);
+  box-shadow: 0 16px 40px rgb(17 24 39 / 16%);
+  display: grid; gap: 2px;
+  opacity: 0; visibility: hidden; transition: opacity .16s, transform .16s, visibility .16s;
+}
+/* 상위와 드롭다운 사이의 틈에서 hover 가 끊기지 않도록 투명한 다리를 놓는다. */
+.kc-nav-group::after { content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 14px; }
+.kc-nav-group:hover .kc-nav-drop,
+.kc-nav-group:focus-within .kc-nav-drop {
+  opacity: 1; visibility: visible; transform: translateX(-50%) translateY(4px);
+}
+/* 드롭다운 안 링크는 헤더 투명/불투명과 무관하게 항상 흰 배경 위에 있다. */
+.kc-nav-drop a,
+.kc-head.is-solid .kc-nav-drop a {
+  display: block; padding: 10px 14px; border-radius: var(--kc-r-s);
+  font-size: 14.5px; font-weight: 600; color: var(--kc-text-2); white-space: nowrap;
+}
+.kc-nav-drop a:hover,
+.kc-head.is-solid .kc-nav-drop a:hover { background: var(--kc-bg); color: var(--kc-accent); }
+.kc-nav-drop a.on,
+.kc-head.is-solid .kc-nav-drop a.on { background: var(--kc-accent-soft); color: var(--kc-accent); }
+
+.kc-burger { display: none; border: 0; background: none; color: #fff; padding: 6px; cursor: pointer; }
+.kc-head.is-solid .kc-burger { color: var(--kc-text); }
+
+/* 모바일 드로어. 항상 마운트해 두고 클래스로만 열고 닫는다 — 그래야 슬라이드가 걸린다. */
+.kc-drawer-back {
+  position: fixed; inset: 0; z-index: 60; background: rgb(0 0 0 / 45%);
+  opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s;
+}
+.kc-drawer-back.open { opacity: 1; visibility: visible; }
+.kc-drawer {
+  position: fixed; top: 0; bottom: 0; right: 0; z-index: 61;
+  width: 268px; max-width: 82vw; padding: 18px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+  background: var(--kc-surface); box-shadow: -8px 0 30px rgb(0 0 0 / 18%);
+  transform: translateX(100%); transition: transform .25s ease;
+  display: flex; flex-direction: column; overflow-y: auto;
+}
+.kc-drawer.open { transform: translateX(0); }
+.kc-drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.kc-drawer-head .kc-logo-mark { color: #001653; font-size: 17px; }
+.kc-drawer-x { border: 0; background: none; color: var(--kc-text-3); cursor: pointer; display: grid; place-items: center; padding: 4px; }
+.kc-drawer a:not(.kc-btn) { display: block; padding: 15px 4px; font-size: 16px; font-weight: 600; color: var(--kc-text-2); border-bottom: 1px solid var(--kc-line); }
+.kc-drawer a.on:not(.kc-btn) { color: var(--kc-accent); }
+/* 드로어 안의 버튼은 목록 항목이 아니다. 위 :not(.kc-btn) 로 빼 두지 않으면
+   회색 글자에 테두리까지 붙어 버튼으로 보이지 않는다. 실제로 대비 1.65:1 이었다. */
+.kc-drawer .kc-btn { margin-top: 22px; width: 100%; }
+
+/* 드로어의 상위 메뉴 — 눌러서 자식을 접었다 편다. */
+.kc-drawer-parent {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  width: 100%; padding: 15px 4px; border: 0; border-bottom: 1px solid var(--kc-line);
+  background: none; color: var(--kc-text); font-size: 16px; font-weight: 700;
+  text-align: left; cursor: pointer;
+}
+.kc-drawer-parent .material-symbols-outlined { font-size: 20px; color: var(--kc-text-3); transition: transform .2s; }
+.kc-drawer-parent.open .material-symbols-outlined { transform: rotate(180deg); }
+/* grid-template-rows 0fr↔1fr 로 높이를 모르는 내용도 부드럽게 펼친다. */
+.kc-drawer-children { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .22s ease; }
+.kc-drawer-children.open { grid-template-rows: 1fr; }
+.kc-drawer-children > * { overflow: hidden; min-height: 0; }
+.kc-drawer-children a { padding-left: 16px; font-size: 15px; font-weight: 600; color: var(--kc-text-3); }
+.kc-drawer-children a.on { color: var(--kc-accent); }
+
+/* ===== 히어로 (메인) ===== */
+
+/* 좌우 분할 히어로.
+   예전에는 우주 사진 위에 글을 가운데로 모았다. 그 구성은 어느 회사 사이트에나 있어
+   기억에 남지 않고, 글이 사진의 밝은 부분과 겹쳐 읽히지도 않았다.
+   지금은 왼쪽에 글, 오른쪽에 사진을 두어 축을 하나로 세운다. */
+.kc-hero {
+  position: relative; overflow: hidden;
+  min-height: 100svh; color: #fff; background: var(--kc-ink);
+  display: grid; grid-template-columns: 1.05fr .95fr; align-items: stretch;
+}
+.kc-hero-inner {
+  position: relative; z-index: 1; align-self: center; width: 100%;
+  /* 왼쪽 여백을 .kc-wrap 과 같은 자리에 맞춘다. 그래야 히어로 제목과
+     아래 섹션 제목이 같은 세로선에서 시작한다. */
+  padding-left: max(24px, calc((100vw - var(--kc-wrap)) / 2 + 24px));
+  padding-right: clamp(32px, 4vw, 72px);
+  padding-top: calc(var(--kc-head-h) + 32px);
+  padding-bottom: 72px;
+}
+/* 오른쪽 사진. 글과 겹치지 않으므로 어둡게 덮을 필요가 없다.
+   왼쪽 모서리만 잉크색으로 흘려보내 글 쪽과 자연스럽게 이어지게 한다. */
+.kc-hero-media { position: relative; overflow: hidden; }
+.kc-hero-media img { width: 100%; height: 100%; object-fit: cover; }
+.kc-hero-media::after {
+  content: ''; position: absolute; inset: 0;
+  background:
+    /* 상단바가 사진 위에 얹히므로 위쪽을 덮어 글자 대비를 확보한다. */
+    linear-gradient(180deg, rgb(10 25 47 / 78%) 0, rgb(10 25 47 / 0%) 190px),
+    linear-gradient(90deg, var(--kc-ink) 0%, rgb(10 25 47 / 30%) 28%, rgb(10 25 47 / 12%) 100%);
+}
+/* 히어로 제목. 사이저(자리잡기용 사본)와 실제 h1 이 완전히 같은 타이포여야
+   겹쳤을 때 어긋나지 않는다. 그래서 한 규칙으로 묶는다. */
+.kc-hero h1, .kc-type-sizer { font-size: clamp(32px, 4.2vw, 58px); font-weight: 800; line-height: 1.22; letter-spacing: -.035em; }
+
+/* 타이핑 영역. 사이저가 높이를 잡고, h1 은 그 위에 겹친다 → 글자가 늘어나도 아래가 안 밀린다. */
+.kc-type { position: relative; }
+.kc-type-sizer { visibility: hidden; }
+.kc-type h1 { position: absolute; left: 0; right: 0; top: 0; }
+
+/* 커서. 타이핑 중에만 보인다. */
+.kc-caret {
+  display: inline-block; width: 3px; height: .95em; margin-left: 6px; vertical-align: -.1em;
+  background: #7dabff; animation: kc-blink 1s steps(1) infinite;
+}
+@keyframes kc-blink { 50% { opacity: 0; } }
+
+/* 타이핑이 끝난 뒤 순서대로 등장. .in 이 붙는 순간부터 아래 지연이 흐른다.
+   예전에는 타이핑 완료 → (1초) → 문구 → (1초) → 버튼 이라 버튼이 보이기까지
+   3.7초가 걸렸다. 회사를 알아보러 온 사람을 그만큼 세워 둘 이유가 없다.
+   한 박자 쉬는 느낌은 남기고 간격만 줄인다. */
+.kc-reveal { opacity: 0; transform: translateY(10px); transition: opacity .45s ease .25s, transform .45s ease .25s; }
+.kc-reveal.in { opacity: 1; transform: none; }
+.kc-reveal-late { transition-delay: .5s; }
+@media (prefers-reduced-motion: reduce) {
+  .kc-reveal { opacity: 1; transform: none; transition: none; }
+  .kc-caret { animation: none; }
+  /* 움직임을 줄이겠다고 설정했으면 미끄러지지 않고 그냥 나타난다. */
+  .ex-dock { transition: opacity .2s ease; }
+  .ex-dock:not(.is-up) { transform: none; }
+}
+/* 회사명. 글꼴과 자간으로 구분하고 색은 흰색 그대로 둔다.
+   예전에는 파란 그라데이션을 입혔는데, 큰 제목에 건 그라데이션은 대비를 깎아먹고
+   어느 회사 사이트나 똑같아 보이게 만든다. */
+.kc-hero-mark { font-family: 'Hanken Grotesk', sans-serif; letter-spacing: .02em; color: #fff; }
+.kc-hero-lead { margin: 24px 0 0 !important; max-width: 46ch; font-size: clamp(15.5px, 1.3vw, 18px); line-height: 1.8; color: rgb(226 235 250 / 82%); }
+.kc-hero-actions { margin-top: 36px; display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* 좁은 화면에서는 사진을 위로 올리고 글을 아래에 쌓는다.
+   좌우 분할을 유지하면 두 칸 다 너무 좁아져 제목이 서너 줄로 접힌다. */
+@media (max-width: 900px) {
+  .kc-hero { grid-template-columns: 1fr; grid-template-rows: 34svh auto; min-height: 100svh; }
+  .kc-hero-media { order: -1; }
+  .kc-hero-media::after { background: linear-gradient(180deg, rgb(10 25 47 / 55%) 0%, rgb(10 25 47 / 30%) 45%, var(--kc-ink) 100%); }
+  .kc-hero-inner { max-width: none; margin: 0; padding: 32px 24px 56px; }
+}
+/* ===== 서브 페이지 상단(회사소개·사업영역·공지·문의 공통) ===== */
+
+/* 서브 페이지 상단.
+   예전에는 일곱 화면 모두 같은 사무실 스톡 사진 위에 제목을 가운데로 얹었다.
+   사진이 내용과 아무 상관이 없어 화면마다 같은 자리를 낭비했고, 제목이 가운데에
+   있어 바로 아래 본문의 왼쪽 축과 어긋났다. 사진을 걷고 왼쪽으로 붙인다. */
+.kc-sub {
+  padding: calc(var(--kc-head-h) + 44px) 0 40px; color: #fff; background: var(--kc-ink);
+}
+.kc-sub h1 { margin-top: 10px !important; font-size: clamp(28px, 3.8vw, 44px); font-weight: 800; letter-spacing: -.035em; }
+/* 빵부스러기. 구분자는 CSS 로 넣어 마크업에 의미 없는 문자가 섞이지 않게 한다. */
+.kc-crumb { display: flex; align-items: center; font-size: 13.5px; color: rgb(226 235 250 / 62%); }
+.kc-crumb li { display: inline-flex; align-items: center; }
+.kc-crumb li + li::before { content: '›'; margin: 0 9px; color: rgb(226 235 250 / 42%); }
+.kc-crumb a:hover { color: #fff; }
+.kc-crumb .material-symbols-outlined { font-size: 17px; margin-right: 5px; }
+
+/* ===== 섹션 공통 ===== */
+
+.kc-sec { padding: var(--kc-gap-sec) 0; }
+/* 서브 상단 배너 바로 아래에 오는 섹션. 위아래 여백을 줄여 본문이 너무 밀리지 않게 한다. */
+.kc-sec-tight { padding: clamp(48px, 5vw, 68px) 0; }
+.kc-sec-alt { background: var(--kc-bg); }
+
+/* 섹션 제목은 왼쪽에 붙는 것이 기본이다.
+   가운데 정렬을 기본으로 두면 모든 섹션이 같은 리듬으로 시작해 어느 것이 중요한지
+   구분되지 않고, 긴 한국어 제목이 두 줄로 접힐 때 축이 흔들린다.
+   가운데가 필요한 자리(닫는 문장 같은 곳)에서만 .center 를 붙인다. */
+.kc-sec-head { max-width: 760px; margin: 0 0 var(--kc-gap-head); }
+.kc-sec-head.center { margin-left: auto; margin-right: auto; text-align: center; }
+.kc-sec-title { font-size: clamp(26px, 3.4vw, 40px); font-weight: 800; letter-spacing: -.028em; line-height: 1.28; text-wrap: balance; }
+.kc-sec-desc { margin-top: 14px !important; max-width: 62ch; font-size: 16.5px; line-height: 1.85; color: var(--kc-text-2); }
+
+/* ===== 메인: 사업분야 ===== */
+
+/* 첫 칸을 넓게 잡는다. 같은 크기 두 칸은 "둘 다 똑같이 중요하다" 는 뜻인데,
+   실제로는 IT 컨설팅이 주력이고 EXPRISM 은 그 회사가 만든 제품이다. */
+.kc-svc { display: grid; grid-template-columns: 1.18fr 1fr; gap: clamp(32px, 4vw, 60px); align-items: start; }
+.kc-svc-item { display: block; }
+.kc-svc-img {
+  border-radius: var(--kc-r); overflow: hidden; background: var(--kc-bg);
+  height: clamp(210px, 23vw, 320px);
+}
+.kc-svc-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+/* 카드를 통째로 들어올리지 않는다. 사진만 아주 조금 당겨 링크라는 것만 알린다. */
+.kc-svc-item.is-link:hover .kc-svc-img img { transform: scale(1.03); }
+.kc-svc-body { padding-top: 22px; }
+.kc-svc-meta { display: flex; align-items: center; gap: 12px; }
+.kc-svc-no {
+  font-family: 'Hanken Grotesk', sans-serif; font-size: 13px; font-weight: 800;
+  letter-spacing: .1em; color: var(--kc-accent);
+}
+.kc-svc-tag {
+  padding: 3px 10px; border-radius: 999px; background: var(--kc-accent-soft);
+  color: var(--kc-accent-strong); font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+.kc-svc-body h3 { margin-top: 10px !important; font-size: clamp(20px, 1.7vw, 25px); font-weight: 800; letter-spacing: -.025em; }
+.kc-svc-body p { margin-top: 12px !important; max-width: 46ch; font-size: 15.5px; line-height: 1.85; color: var(--kc-text-2); }
+.kc-svc-more {
+  margin-top: 18px; display: inline-flex; align-items: center; gap: 6px;
+  font-size: 14.5px; font-weight: 700; color: var(--kc-accent);
+}
+.kc-svc-more .material-symbols-outlined { font-size: 18px; transition: transform .2s; }
+.kc-svc-item.is-link:hover .kc-svc-more .material-symbols-outlined { transform: translateX(4px); }
+
+/* ===== 메인: 자사 솔루션 ===== */
+
+/* 수주 업무 카드(3단)와 성격이 달라 구성을 바꾼다.
+   사진을 왼쪽에 세우고 글을 오른쪽에 붙인다. */
+.kc-prod { padding: var(--kc-gap-sec) 0; background: var(--kc-bg); }
+.kc-prod-inner { display: grid; grid-template-columns: .5fr 1fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+.kc-prod-shot { border-radius: var(--kc-r); overflow: hidden; border: 1px solid var(--kc-line); background: var(--kc-surface); }
+.kc-prod-shot img { width: 100%; height: auto; display: block; }
+.kc-prod-mark {
+  font-family: 'Hanken Grotesk', sans-serif; font-size: 13px; font-weight: 800;
+  letter-spacing: .22em; color: var(--kc-accent);
+}
+.kc-prod h2 { margin-top: 12px !important; font-size: clamp(23px, 2.6vw, 32px); font-weight: 800; letter-spacing: -.03em; line-height: 1.35; }
+.kc-prod-desc { margin-top: 16px !important; max-width: 56ch; font-size: 16px; line-height: 1.9; color: var(--kc-text-2); }
+.kc-prod .kc-btn { margin-top: 26px; }
+
+/* 사업분야가 셋이 되면서 3단으로 간다. 첫 칸을 넓히던 비대칭은 항목이 둘일 때 쓰던 것이다. */
+.kc-svc-3 { grid-template-columns: repeat(3, 1fr); }
+
+@media (max-width: 960px) {
+  .kc-prod-inner { grid-template-columns: 1fr; }
+  .kc-prod-shot { max-width: 300px; }
+  .kc-svc-3 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  .kc-svc-3 { grid-template-columns: 1fr; }
+}
+
+/* ===== 메인: 소식 + 문의 ===== */
+
+/* 예전에는 같은 크기 흰 패널 두 장이었다. 공지는 여러 건의 목록이고 문의는
+   하나의 행동이라 성격이 다른데 같은 그릇에 담겨 있었다. 폭과 형태를 갈라 놓는다. */
+.kc-close { display: grid; grid-template-columns: 1.5fr 1fr; gap: clamp(32px, 4vw, 64px); align-items: start; }
+.kc-close-head { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; }
+.kc-close-head h2 { font-size: clamp(21px, 2vw, 26px); font-weight: 800; letter-spacing: -.025em; }
+.kc-close-all { display: inline-flex; align-items: center; gap: 5px; font-size: 14.5px; font-weight: 700; color: var(--kc-accent); }
+.kc-close-all .material-symbols-outlined { font-size: 17px; }
+
+/* 목록은 테두리 상자에 담지 않고 항목 사이 가로선으로만 나눈다. */
+.kc-feed { margin-top: 22px !important; border-top: 1px solid var(--kc-line); }
+.kc-feed li { border-bottom: 1px solid var(--kc-line); }
+.kc-feed a {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 20px;
+  padding: 17px 4px; transition: color .14s;
+}
+.kc-feed a:hover { color: var(--kc-accent); }
+.kc-feed-title { font-size: 15.5px; font-weight: 600; }
+.kc-feed-date { flex: none; font-size: 13.5px; color: var(--kc-text-3); }
+
+.kc-ask { padding: 30px 30px 34px; border-radius: var(--kc-r); background: var(--kc-surface); border: 1px solid var(--kc-line); }
+.kc-ask h2 { font-size: 20px; font-weight: 800; letter-spacing: -.025em; }
+.kc-ask p { margin-top: 12px !important; font-size: 15px; line-height: 1.85; color: var(--kc-text-2); }
+.kc-ask .kc-btn { margin-top: 22px; width: 100%; }
+
+/* 좁은 화면: 두 구성 모두 한 줄로 쌓는다. */
+@media (max-width: 860px) {
+  .kc-svc, .kc-close { grid-template-columns: 1fr; }
+}
+
+/* 만든 회사. 글 왼쪽 + 목록 오른쪽. 앞의 언어 띠(사진 왼쪽)와 구성이 겹치지 않는다. */
+.ex-maker { display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(32px, 5vw, 72px); align-items: start; }
+.ex-mark-dark { color: var(--kc-accent); }
+.ex-maker h2 { margin-top: 12px !important; font-size: clamp(23px, 2.6vw, 32px); font-weight: 800; letter-spacing: -.03em; line-height: 1.35; }
+.ex-maker-desc { margin-top: 16px !important; max-width: 56ch; font-size: 16px; line-height: 1.9; color: var(--kc-text-2); }
+.ex-maker .kc-btn { margin-top: 26px; }
+.ex-maker-list { border-top: 1px solid var(--kc-line); }
+.ex-maker-list li { display: flex; flex-direction: column; gap: 5px; padding: 18px 2px; border-bottom: 1px solid var(--kc-line); }
+.ex-maker-list strong { font-size: 16.5px; font-weight: 800; letter-spacing: -.02em; }
+.ex-maker-list span { font-size: 14.5px; color: var(--kc-text-2); }
+@media (max-width: 960px) { .ex-maker { grid-template-columns: 1fr; } }
+
+/* ===== EXPRISM 제품 소개 ===== */
+
+/* 히어로. 회사 사이트와 같은 좌우 분할이지만 오른쪽이 사진이 아니라 실제 앱 화면이라
+   꽉 채우지 않고 여백 안에 세워 둔다. */
+/* 폰 화면 두 개(각 393px)가 들어가야 해서 오른쪽 칸을 회사 사이트 히어로보다 넓게 잡는다. */
+.ex-hero { align-items: center; grid-template-columns: 1fr 1.3fr; }
+/* 기본 히어로는 왼쪽 여백을 본문 격자(1200px)에 맞춰 화면이 넓을수록 키운다.
+   여기서는 오른쪽 칸이 이미 넓어서, 그대로 두면 1920px 에서 제목이 세 줄로 접혔다.
+   여백에 상한을 둬 글 칸을 지킨다. */
+.ex-hero .kc-hero-inner {
+  padding-left: clamp(24px, calc((100vw - var(--kc-wrap)) / 2 + 24px), 180px);
+}
+/* 위 두 줄은 미디어쿼리 밖이라, 좁은 화면에서 .kc-hero 를 1열로 돌리는 규칙보다
+   나중에 선언돼 그걸 덮어쓴다. 여기서 다시 1열로 되돌린다. */
+/* 좁은 화면 규칙은 이 파일 아래쪽, 기본 규칙 뒤에 모아 뒀다.
+   여기(기본 규칙 앞)에 두면 뒤에 오는 .ex-hero-shot / .ex-hero-frame 기본값이
+   미디어쿼리를 덮어써서 아무 일도 일어나지 않는다. */
+
+.ex-hero .kc-hero-inner { padding-bottom: 56px; }
+.ex-mark {
+  font-family: 'Hanken Grotesk', sans-serif; font-size: 13px; font-weight: 800;
+  letter-spacing: .22em; color: #7dabff;
+}
+/* 히어로의 제품 로고. 제목 위에 제 크기로 선다.
+   예전에는 배경에 7% 로 깔아 뒀는데, 그러면 로고가 있는지도 모른다.
+   짙은 바탕이라 아이콘의 보라·파랑이 그대로 살아난다. */
+.ex-hero-logo {
+  display: block; width: auto; height: 120px;
+  margin-bottom: 22px;
+  filter: drop-shadow(0 14px 34px rgb(99 102 241 / 38%));
+}
+.ex-hero h1 { margin-top: 12px !important; }
+.ex-hero-shot {
+  display: flex; align-items: center; justify-content: center;
+  gap: clamp(12px, 1.6vw, 22px);
+  padding: calc(var(--kc-head-h) + 32px) clamp(20px, 2.4vw, 40px) 48px 0;
+}
+/* 가게 화면과 사용 영상. 둘 다 폰 비율(300x554)로 같은 크기다.
+   폭은 칸을 나눠 갖고, 비율로 높이를 잡아 두 개가 항상 같은 크기로 선다. */
+.ex-hero-frame {
+  /* 비율은 iPhone 14/15/16 Pro(393x852)를 따르고, 실제 크기는 셋 중 가장 작은 값으로 정한다.
+       1) 393px            제 크기보다 크게 늘리지 않는다
+       2) 화면 높이에 맞춘 폭   852px 를 그대로 쓰면 세로가 화면을 넘어간다
+       3) 칸을 반씩 나눈 폭     두 개가 나란히 서야 한다
+     세로를 기준으로 폭을 정하고 높이는 비율이 따라오게 해야 위아래가 넘치지 않는다. */
+  flex: 0 1 auto; min-width: 0;
+  width: min(
+    393px,
+    (100svh - var(--kc-head-h) - 150px) * 393 / 852,
+    (100% - clamp(12px, 1.6vw, 22px)) / 2
+  );
+  aspect-ratio: 393 / 852; height: auto;
+  border: 0; border-radius: 22px; background: #000;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 45%);
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .ex-hero { grid-template-columns: 1fr; grid-template-rows: auto auto; }
+  /* .kc-hero 의 좁은 화면 규칙은 "사진 34svh + 글" 을 전제로 쓰였다.
+     이 화면은 사진 대신 실제 앱 화면이 아래에 오므로 그 전제를 되돌린다.
+     되돌리지 않으면 글 칸이 34svh 로 눌려 제목이 상단바 로고와 겹친다. */
+  .ex-hero .kc-hero-inner {
+    max-width: none; margin: 0;
+    padding: calc(var(--kc-head-h) + 24px) 24px 28px;
+  }
+  .ex-hero .kc-hero-lead { margin-top: 16px !important; }
+  /* 좌우 분할이 풀려 글이 화면 폭을 다 쓰는 만큼, 버튼도 폭을 다 쓰는 편이 보기 좋다.
+     640px 이하에서만 세로로 쌓던 것을 900px 이하로 넓힌다. */
+  .ex-hero .kc-hero-actions {
+    margin-top: 24px; flex-direction: column; align-items: stretch; gap: 10px;
+  }
+  .ex-hero .kc-hero-actions .kc-btn {
+    flex: none; width: 100%; justify-content: center;
+    height: auto; min-height: 58px; font-size: 16.5px; letter-spacing: -.01em;
+  }
+  .ex-hero .kc-hero-actions .kc-btn .material-symbols-outlined { font-size: 22px; }
+
+  /* 화면 두 개를 나란히 세우면 폭이 반으로 줄어 글씨가 뭉갠다.
+     옆으로 넘겨 보는 띠로 바꾸고, 두 번째 카드가 살짝 보이게 해서 넘길 수 있음을 알린다. */
+  .ex-hero-shot {
+    display: flex; justify-content: flex-start; align-items: flex-start;
+    max-height: none; padding: 0 24px 32px; gap: 14px;
+    overflow-x: auto; scroll-snap-type: x mandatory;
+    /* 스냅은 여백을 무시하고 카드를 칸 맨 끝에 붙인다.
+       이걸 안 주면 첫 카드가 왼쪽 여백을 먹고 화면 끝에 딱 붙어 시작한다. */
+    scroll-padding-left: 24px;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .ex-hero-shot::-webkit-scrollbar { display: none; }
+  /* 폭을 줄이더라도 <b>폰 비율은 반드시 지킨다</b>.
+     높이를 먼저 정해 납작한 상자에 넣었더니, 안쪽에서 도는 진짜 주문앱이
+     그 비율에 맞춰 다시 그려져 방 그림이 찌그러지고 화면이 이상해졌다.
+     비율만 지키면 안쪽 앱은 좁은 폰에서와 똑같이 그려진다. */
+  .ex-hero-frame {
+    flex: none; scroll-snap-align: start;
+    width: min(320px, 76vw); max-width: none;
+    aspect-ratio: 393 / 852; height: auto;
+    border-radius: 20px;
+  }
+}
+
+/* 히어로 안, 버튼 바로 위의 선언.
+   제목만큼 크면 두 개가 싸우므로 제목보다 한 단계 작게 두되, 설명글보다는 굵고 밝게 해서
+   "제목 - 선언 - 버튼" 이 계단으로 읽히게 한다. */
+.ex-stmt-line {
+  margin-top: 22px !important; max-width: 22ch;
+  font-size: clamp(18px, 1.65vw, 23px); font-weight: 700; line-height: 1.5; letter-spacing: -.028em;
+  color: #fff;
+}
+.ex-stmt-sub {
+  margin-top: 12px !important; max-width: 46ch;
+  font-size: clamp(14.5px, 1.2vw, 16.5px); line-height: 1.8; color: rgb(226 235 250 / 74%);
+}
+
+/* 손님 화면 세 장. 사진 아래에 글을 붙인 세로 묶음이라 뒤의 기능 목록과 리듬이 다르다. */
+.ex-shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(24px, 3vw, 44px); }
+.ex-shot { border-radius: var(--kc-r); overflow: hidden; background: var(--kc-bg); border: 1px solid var(--kc-line); }
+.ex-shot img { width: 100%; height: auto; display: block; }
+.ex-shots h3 { margin-top: 20px !important; font-size: 19px; font-weight: 800; letter-spacing: -.02em; }
+/* 카드 번호. 옆으로 넘겨 보는 좁은 화면에서 순서를 잃지 않게 제목 앞에 붙인다. */
+.ex-shot-no {
+  margin-right: 9px;
+  font-family: 'Hanken Grotesk', sans-serif; font-size: 13px; font-weight: 800;
+  letter-spacing: .1em; color: var(--kc-accent);
+}
+.ex-shots p { margin-top: 9px !important; font-size: 15px; line-height: 1.8; color: var(--kc-text-2); }
+
+/* 사장님 화면도 휴대폰 캡쳐라 손님 화면과 같은 세로 묶음이다.
+   장수만 넷이라 4단으로 놓는다. */
+.ex-shots-4 { grid-template-columns: repeat(4, 1fr); }
+
+/* 화면으로 보여주지 않는 나머지 기능. 사진 없이 가로선으로만 끊는다. */
+.ex-feat { margin-top: clamp(48px, 6vw, 84px) !important; }
+
+.ex-feat { display: grid; grid-template-columns: 1fr 1fr; gap: 0 clamp(32px, 4vw, 64px); border-top: 1px solid var(--kc-line); }
+.ex-feat li { display: flex; gap: 16px; padding: 24px 2px; border-bottom: 1px solid var(--kc-line); }
+.ex-feat-no {
+  flex: none; padding-top: 3px;
+  font-family: 'Hanken Grotesk', sans-serif; font-size: 13px; font-weight: 800;
+  letter-spacing: .1em; color: var(--kc-accent);
+}
+.ex-feat h3 { font-size: 17.5px; font-weight: 800; letter-spacing: -.02em; }
+.ex-feat p { margin-top: 7px !important; font-size: 15px; line-height: 1.8; color: var(--kc-text-2); }
+
+/* 언어. 짙은 바탕의 넓은 띠 하나. 앞뒤 섹션과 색으로 구분된다. */
+.ex-lang { padding: var(--kc-gap-sec) 0; background: var(--kc-ink); color: #fff; }
+/* 사진을 왼쪽에 둔다. 히어로가 이미 "글 왼쪽 + 사진 오른쪽" 이라
+   같은 구성을 두 번 쓰면 화면이 한 가지 리듬으로만 읽힌다. */
+.ex-lang-inner { display: grid; grid-template-columns: .75fr 1.25fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+.ex-lang-inner > .ex-lang-shot { order: -1; }
+.ex-lang h2 { font-size: clamp(24px, 2.8vw, 34px); font-weight: 800; letter-spacing: -.03em; line-height: 1.35; }
+.ex-lang p { margin-top: 18px !important; max-width: 56ch; font-size: 16px; line-height: 1.9; color: rgb(226 235 250 / 78%); }
+.ex-lang-list { margin-top: 26px !important; display: flex; flex-wrap: wrap; gap: 8px; }
+.ex-lang-list li {
+  padding: 7px 15px; border-radius: 999px; border: 1px solid rgb(255 255 255 / 22%);
+  font-size: 14.5px; font-weight: 600; color: rgb(226 235 250 / 92%);
+}
+.ex-lang-shot { border-color: rgb(255 255 255 / 14%); background: rgb(255 255 255 / 6%); }
+.ex-lang-shot img { width: 100%; }
+
+@media (max-width: 960px) {
+  .ex-shots { grid-template-columns: 1fr 1fr; }
+  .ex-feat { grid-template-columns: 1fr; }
+  /* 1열로 접히면 사진이 먼저, 글이 뒤에 오는 순서로 통일한다. */
+  .ex-shots-4 { grid-template-columns: 1fr 1fr; }
+  .ex-lang-inner { grid-template-columns: 1fr; }
+  /* 1열로 접히면 글이 먼저 오는 편이 읽기 순서에 맞다. */
+  .ex-lang-inner > .ex-lang-shot { order: 0; }
+  /* 1열이 되면 화면 사진이 너무 커진다. 읽는 폭 안으로 묶는다. */
+  .ex-lang-shot { max-width: 320px; }
+}
+
+/* 좁은 화면 하단 고정 버튼. 기본은 감춰 두고 640px 이하에서만 띄운다. */
+.ex-dock { display: none; }
+
+/* ===== 좁은 화면(휴대폰) =====
+
+   이 화면은 휴대폰으로 보는 사람이 대부분이다. 넓은 화면 구성을 그대로 좁히면
+   폰 캡쳐 한 장이 화면 폭을 다 먹어 한 섹션이 3000px 을 넘었다.
+   세로로 무한정 쌓는 대신, 실제 화면은 옆으로 넘겨 보게 하고 나머지는 두 칸으로 접는다. */
+@media (max-width: 640px) {
+  /* 히어로 버튼 규칙은 900px 이하 블록에 모아 뒀다.
+     예전에 한 줄에 나눠 넣으려고 flex:1 1 0 을 줬다가, 세로 배치에서는 flex-basis 0 이
+     <b>높이</b>에 걸려 버튼이 글자 높이(26px)까지 눌린 적이 있다. 다시 넣지 말 것. */
+
+  /* 로고는 좁은 화면에서 한 단계 줄인다. 상단바에서 햄버거와 부딪히지 않게. */
+  .kc-logo-icon { height: 27px; }
+  .kc-logo-words, .kc-logo-word { height: 15px; }
+  .kc-logo-lockup { gap: 9px; }
+  /* 로고 크기는 화면 폭과 상관없이 120px 로 고정이다(요청).
+     그만큼 위쪽이 무거워지므로 글 사이 여백을 조여 첫 화면 안에 버튼까지 넣는다. */
+  .ex-hero-logo { margin-bottom: 14px; }
+  .ex-stmt-line { margin-top: 16px !important; max-width: none; }
+  .ex-stmt-sub { margin-top: 10px !important; max-width: none; }
+
+  /* 손님 화면 — 실제 화면을 작게 줄이면 볼 이유가 없어진다.
+     크기를 지키는 대신 옆으로 넘겨 보게 한다. */
+  /* 본문 격자 밖으로 흘려보내지 않는다. 음수 여백으로 화면 끝까지 붙이면
+     2px 이 삐져나와 페이지 전체에 가로 스크롤이 생겼다. */
+  .ex-shots {
+    display: flex; max-width: none;
+    gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+  }
+  .ex-shots::-webkit-scrollbar { display: none; }
+  .ex-shots > li { flex: none; scroll-snap-align: start; width: 66vw; max-width: 260px; }
+  .ex-shots h3 { margin-top: 14px !important; font-size: 17px; }
+  .ex-shots p { margin-top: 6px !important; font-size: 14px; line-height: 1.7; }
+
+  /* 사장님 화면 — 넉 장이라 두 칸으로 접으면 빈 칸 없이 두 줄로 떨어진다. */
+  .ex-shots-4 {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 22px 12px; overflow: visible;
+  }
+  .ex-shots-4 > li { width: auto; max-width: none; }
+  .ex-shots-4 h3 { font-size: 15.5px; }
+  .ex-shots-4 p { font-size: 13.5px; }
+
+  .ex-feat li { padding: 18px 2px; }
+  .ex-lang-shot { max-width: 260px; margin: 0 auto; }
+  .ex-maker-list li { padding: 15px 2px; }
+
+  /* 하단 고정 버튼.
+     히어로의 문의 버튼이 보이는 동안에는 화면 밖에 내려가 있다가,
+     그 버튼이 위로 지나가면 미끄러져 올라온다(ExprismPage 의 Dock 참조). */
+  .ex-dock {
+    display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    background: rgb(255 255 255 / 92%); backdrop-filter: blur(10px);
+    border-top: 1px solid var(--kc-line);
+    transform: translateY(110%); opacity: 0; pointer-events: none;
+    transition: transform .38s cubic-bezier(.22, .61, .36, 1), opacity .28s ease;
+  }
+  .ex-dock.is-up { transform: none; opacity: 1; pointer-events: auto; }
+  .ex-dock .kc-btn { width: 100%; justify-content: center; height: auto; min-height: 56px; font-size: 16.5px; }
+  /* 고정 버튼이 마지막 줄을 가리지 않게 바닥을 띄운다. */
+  .kc:has(.ex-dock) .kc-foot { padding-bottom: 96px; }
+}
+
+/* ===== 공통: 화면을 닫는 띠 ===== */
+
+/* 메인과 서브 화면이 같은 부품을 쓴다. 같은 역할을 하는 자리에 모양이 둘이면
+   사이트가 두 벌로 보인다.
+   예전에는 스톡 사진 위에 글과 버튼을 가운데로 모은 구성이었고, 같은 띠가
+   다섯 화면에 똑같이 들어가 있었다. 사진을 걷고 글을 왼쪽에 붙인 뒤
+   버튼을 오른쪽 끝으로 보내, 문장과 행동이 한 줄로 읽히게 한다.
+   버튼은 마크업에서 글 다음에 오지만 격자 배치로 오른쪽 칸에 세운다.
+   그래서 이 띠를 쓰는 화면들의 JSX 는 손대지 않아도 된다. */
+.kc-cta { color: #fff; background: var(--kc-ink); }
+.kc-cta-inner {
+  max-width: var(--kc-wrap); margin: 0 auto; padding: clamp(56px, 6vw, 88px) 24px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px clamp(32px, 4vw, 64px);
+  align-items: end;
+}
+.kc-cta h2 { grid-column: 1; font-size: clamp(22px, 2.4vw, 30px); font-weight: 800; line-height: 1.4; letter-spacing: -.028em; }
+.kc-cta p { grid-column: 1; margin: 0 !important; max-width: 68ch; font-size: 15.5px; line-height: 1.9; color: rgb(226 235 250 / 78%); }
+.kc-cta .kc-btn { grid-column: 2; grid-row: 1 / span 2; align-self: end; flex: none; }
+@media (max-width: 860px) {
+  .kc-cta-inner { grid-template-columns: 1fr; }
+  .kc-cta .kc-btn { grid-column: 1; grid-row: auto; justify-self: start; margin-top: 12px; }
+}
+
+/* ===== 회사소개 ===== */
+
+.kc-split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+.kc-split-img { border-radius: var(--kc-r); overflow: hidden; aspect-ratio: 4 / 3; box-shadow: var(--kc-shadow-lg); }
+.kc-split-img img { width: 100%; height: 100%; object-fit: cover; }
+.kc-split h2 { font-size: clamp(23px, 3.2vw, 34px); font-weight: 800; line-height: 1.35; letter-spacing: -.02em; }
+.kc-split p { margin-top: 20px !important; font-size: 16.5px; line-height: 1.9; color: var(--kc-text-2); }
+.kc-split .kc-btn { margin-top: 30px; }
+
+/* 비전·미션. 항목이 둘뿐이라 테두리가 위계를 알려주지 못한다.
+   상자를 없애고 가운데 세로선 하나로만 나눈다. */
+.kc-vision { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-top: 1px solid var(--kc-line); }
+.kc-vision-card { padding: 36px 44px 8px 0; }
+.kc-vision-card + .kc-vision-card { padding-left: 44px; padding-right: 0; border-left: 1px solid var(--kc-line); }
+.kc-vision-top { display: flex; align-items: center; gap: 11px; color: var(--kc-accent); }
+.kc-vision-top .material-symbols-outlined { font-size: 26px; }
+.kc-vision-top h3 { font-size: 20px; font-weight: 800; color: var(--kc-text); letter-spacing: -.02em; }
+.kc-vision-card p { margin-top: 14px !important; max-width: 44ch; font-size: 15.5px; line-height: 1.85; color: var(--kc-text-2); }
+
+/* 연혁 타임라인 스타일은 지웠다 — 발자취 섹션을 뺐기 때문이다(company-data.js 주석 참조). */
+
+/* ===== 대표 인사말 ===== */
+
+.kc-greet { display: grid; grid-template-columns: 400px 1fr; gap: 56px; align-items: start; }
+.kc-greet-side { display: grid; gap: 26px; }
+.kc-greet-img { margin: 0; border-radius: var(--kc-r); overflow: hidden; box-shadow: var(--kc-shadow-lg); }
+/* 비율을 이미지에 직접 건다. 래퍼에 걸면 사진 원본 비율이 새어 나온다(.kc-svc-img 주석 참조).
+   5:4 는 대표이사 사진(900x720)의 원본 비율이라 얼굴이 잘리지 않는다.
+   처음 4:5(세로 500px)에서 400px 폭 기준 320px 로 낮아져, 사진이 칸을 다 먹지 않고
+   남은 자리에 이력이 들어간다. */
+.kc-greet-img img { width: 100%; height: auto; aspect-ratio: 5 / 4; object-fit: cover; }
+
+/* 대표이사 이력 */
+.kc-career { border: 1px solid var(--kc-line); border-radius: var(--kc-r); padding: 22px 24px 24px; background: var(--kc-surface-2); }
+.kc-career-head { font-size: 15px; font-weight: 800; color: var(--kc-text); letter-spacing: -.01em; }
+.kc-career ul { margin-top: 14px !important; display: grid; gap: 11px; }
+.kc-career li { display: flex; align-items: flex-start; gap: 9px; font-size: 14.5px; line-height: 1.55; color: var(--kc-text-2); }
+/* 한 항목이 여러 줄일 때. 둘째 줄은 첫 줄과 왼쪽을 맞춘다
+   ("어린이·" 의 '인' 아래에 '사회복지…' 의 '사' 가 오도록). */
+.kc-career-text { display: block; }
+.kc-career-text > span { display: block; }
+.kc-career-when {
+  flex: none; width: 26px; padding: 1px 0; border-radius: var(--kc-r-s); margin-top: 1px;
+  background: var(--kc-accent-soft); color: var(--kc-accent);
+  font-size: 11.5px; font-weight: 800; text-align: center;
+}
+/* 배지가 없는 줄도 같은 폭을 차지해 글머리가 한 줄로 맞는다. */
+.kc-career-when.none { background: none; }
+.kc-greet-lead {
+  font-size: clamp(21px, 2.6vw, 28px); font-weight: 800; line-height: 1.5;
+  letter-spacing: -.02em; color: var(--kc-text);
+}
+.kc-greet-body p + p { margin-top: 20px !important; }
+.kc-greet-body p:not(.kc-greet-lead):not(.kc-greet-sign) { font-size: 16.5px; line-height: 1.95; color: var(--kc-text-2); }
+.kc-greet-sign {
+  margin-top: 36px !important; padding-top: 24px; border-top: 1px solid var(--kc-line);
+  font-size: 16px; color: var(--kc-text-2); text-align: right;
+}
+.kc-greet-sign strong { margin-left: 10px; font-size: 19px; font-weight: 800; color: var(--kc-text); }
+
+/* ===== 조직도 ===== */
+
+.kc-org {
+  --org-gap: 20px;      /* 본부 카드 사이 간격 */
+  --org-stem: 28px;     /* 세로 연결선 길이 */
+  --org-line: #cfe0ff;
+  max-width: 1000px; margin: 0 auto;
+}
+.kc-org-top { display: flex; justify-content: center; }
+.kc-org-head {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  min-width: 210px; padding: 22px 30px; border-radius: var(--kc-r);
+  background: var(--kc-accent); color: #fff; box-shadow: var(--kc-shadow-lg);
+}
+.kc-org-head strong { font-size: 20px; font-weight: 800; letter-spacing: .02em; }
+
+/* 대표이사 직속 */
+.kc-org-staff { position: relative; display: flex; justify-content: center; gap: var(--org-gap); margin-top: var(--org-stem); }
+.kc-org-staff::before {
+  content: ''; position: absolute; top: calc(var(--org-stem) * -1); left: 50%;
+  width: 2px; height: var(--org-stem); background: var(--org-line);
+}
+.kc-org-staff-card {
+  display: flex; flex-direction: column; gap: 3px; align-items: center; text-align: center;
+  padding: 14px 24px; border: 1px solid var(--kc-line); border-radius: var(--kc-r); background: var(--kc-surface-2);
+}
+.kc-org-staff-card strong { font-size: 15.5px; font-weight: 700; }
+.kc-org-staff-card span { font-size: 13px; color: var(--kc-text-3); }
+
+/* 본부 줄 */
+.kc-org-divs {
+  position: relative;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--org-gap); margin-top: calc(var(--org-stem) * 2);
+}
+/* 위(대표이사·직속)에서 가로 레일까지 내려오는 세로선.
+   이게 없으면 레일이 아무 데도 이어지지 않고 공중에 뜬 것처럼 보인다. */
+.kc-org-divs::before {
+  content: ''; position: absolute; top: calc(var(--org-stem) * -2); left: 50%;
+  width: 2px; height: var(--org-stem); background: var(--org-line);
+}
+/*
+  연결선을 한 줄로 길게 긋지 않고 카드마다 자기 몫만 그린다.
+  가로 조각을 간격의 절반만큼 양옆으로 늘려 카드 사이 틈을 메우고,
+  양 끝 카드는 바깥쪽 절반을 지운다 → 본부 개수를 바꿔도 선이 저절로 맞는다.
+*/
+.kc-org-div { position: relative; }
+.kc-org-div::before {   /* 카드로 내려오는 세로 줄기 */
+  content: ''; position: absolute; top: calc(var(--org-stem) * -1); left: 50%;
+  width: 2px; height: var(--org-stem); background: var(--org-line);
+}
+.kc-org-div::after {    /* 본부들을 잇는 가로 레일 */
+  content: ''; position: absolute; top: calc(var(--org-stem) * -1);
+  left: calc(var(--org-gap) / -2); right: calc(var(--org-gap) / -2);
+  height: 2px; background: var(--org-line);
+}
+.kc-org-div:first-child::after { left: 50%; }
+.kc-org-div:last-child::after { right: 50%; }
+/* 본부가 하나뿐이면 가로 레일이 필요 없다. */
+.kc-org-div:only-child::after { display: none; }
+
+.kc-org-div-head {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 15px 14px; border-radius: var(--kc-r) var(--kc-r) 0 0;
+  background: var(--kc-ink); color: #fff; font-size: 16px; font-weight: 700;
+}
+.kc-org-div-head .material-symbols-outlined { font-size: 20px; color: #7dabff; }
+.kc-org-teams {
+  border: 1px solid var(--kc-line); border-top: 0; border-radius: 0 0 var(--kc-r) var(--kc-r);
+  background: var(--kc-surface); overflow: hidden;
+}
+.kc-org-teams li { padding: 13px 16px; font-size: 14.5px; color: var(--kc-text-2); text-align: center; }
+.kc-org-teams li + li { border-top: 1px solid var(--kc-line); }
+
+@media (max-width: 640px) {
+  /* 1열로 접히면 가로 레일이 어긋난다 — 지우고 세로 줄기만 남긴다. */
+  .kc-org-div::after { display: none; }
+  .kc-org-divs { margin-top: var(--org-stem); }
+  .kc-org-divs::before { display: none; }
+  .kc-org-div + .kc-org-div { margin-top: var(--org-stem); }
+}
+
+/* 관련 보도 — 외부 기사 링크. 본문(인사말) 위에 두므로 카드를 낮게 가져간다. */
+.kc-press { display: grid; gap: 0; border-top: 1px solid var(--kc-line); }
+.kc-press li { border-bottom: 1px solid var(--kc-line); }
+.kc-press a {
+  display: grid; grid-template-columns: 92px minmax(0, 1fr) auto;
+  align-items: center; gap: 20px; padding: 20px 2px; transition: color .14s;
+}
+.kc-press-outlet {
+  justify-self: start; padding: 3px 10px; border-radius: 999px;
+  background: var(--kc-accent-soft); color: var(--kc-accent); font-size: 11.5px; font-weight: 800;
+}
+/* text-wrap:balance 로 줄 길이를 고르게 나눈다 — 두 줄일 때 아래 줄에 한 어절만
+   남는 것을 막는다. 지원하지 않는 브라우저는 그냥 기본 줄바꿈이 된다. */
+.kc-press-title { font-size: 16px; font-weight: 700; color: var(--kc-text); line-height: 1.55; }
+.kc-press a:hover .kc-press-title { color: var(--kc-accent); }
+.kc-press-foot { display: flex; align-items: center; gap: 12px; }
+.kc-press-date { font-size: 12.5px; color: var(--kc-text-3); }
+.kc-press .material-symbols-outlined { flex: none; font-size: 18px; color: var(--kc-text-3); }
+.kc-press a:hover .material-symbols-outlined { color: var(--kc-accent); }
+
+/* 숫자 지표 스타일은 지웠다 — "숫자로 보는 KANCHENJUNGA" 섹션을 뺐기 때문이다
+   (company-data.js 주석 참조). 되살릴 때 함께 복구하면 된다. */
+
+/* 오시는 길 */
+.kc-map { border-radius: var(--kc-r); overflow: hidden; height: 420px; background: var(--kc-bg); }
+.kc-map iframe { width: 100%; height: 100%; border: 0; display: block; }
+/* 주소·전화·이메일은 세 덩어리의 정보가 아니라 한 벌의 연락처다.
+   상자 세 개로 나누지 않고 가로선으로만 끊는다. */
+.kc-info { display: grid; gap: 0; align-content: start; border-top: 1px solid var(--kc-line); }
+.kc-info-pair { grid-template-columns: 1fr 1fr; gap: 0 44px; max-width: 720px; margin: 0; }
+.kc-info-card { padding: 20px 2px; border-bottom: 1px solid var(--kc-line); }
+.kc-info-card h3 { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; color: var(--kc-text-3); }
+.kc-info-card .material-symbols-outlined { font-size: 18px; color: var(--kc-accent); }
+/* 이메일·URL 은 띄어쓰기가 없어 keep-all 아래서는 한 덩어리가 된다.
+   anywhere 를 줘야 최소 폭 계산에도 반영돼 좁은 칸에서 칸을 밀어내지 않는다. */
+.kc-info-card p { margin-top: 7px !important; font-size: 16px; font-weight: 600; color: var(--kc-text); overflow-wrap: anywhere; }
+.kc-info-card a:hover { color: var(--kc-accent); }
+
+/* ===== 사업영역 ===== */
+
+.kc-biz { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+.kc-biz-card {
+  background: var(--kc-surface); border: 1px solid var(--kc-line); border-radius: var(--kc-r); padding: 32px 30px 34px;
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+}
+.kc-biz-card:hover { transform: translateY(-5px); border-color: rgb(47 111 235 / 32%); box-shadow: var(--kc-shadow-lg); }
+.kc-biz-ic { width: 52px; height: 52px; border-radius: var(--kc-r); display: grid; place-items: center; background: var(--kc-accent-soft); color: var(--kc-accent); }
+.kc-biz-ic .material-symbols-outlined { font-size: 28px; }
+.kc-biz-card h3 { margin-top: 22px !important; font-size: 21px; font-weight: 800; }
+.kc-biz-card > p { margin-top: 14px !important; font-size: 15px; line-height: 1.8; color: var(--kc-text-2); }
+.kc-biz-items { margin-top: 20px !important; padding-top: 20px !important; border-top: 1px solid var(--kc-line); display: grid; gap: 10px; }
+.kc-biz-items li { display: flex; align-items: flex-start; gap: 8px; font-size: 14.5px; color: var(--kc-text); }
+.kc-biz-items .material-symbols-outlined { font-size: 18px; color: var(--kc-accent); flex: none; margin-top: 2px; }
+
+/* 산업별 솔루션 — 이미지와 글을 좌우 번갈아 */
+.kc-ind + .kc-ind { margin-top: 72px; }
+.kc-ind { display: grid; grid-template-columns: 1fr 1fr; gap: 52px; align-items: center; }
+.kc-ind.rev .kc-ind-img { order: 2; }
+.kc-ind-img { border-radius: var(--kc-r); overflow: hidden; aspect-ratio: 3 / 2; box-shadow: var(--kc-shadow-lg); }
+.kc-ind-img img { width: 100%; height: 100%; object-fit: cover; }
+.kc-ind h3 { display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 800; }
+.kc-ind h3 .material-symbols-outlined { font-size: 28px; color: var(--kc-accent); }
+.kc-ind-en { margin-top: 5px !important; font-size: 12.5px; font-weight: 700; letter-spacing: .1em; color: var(--kc-accent); }
+.kc-ind > div > p { margin-top: 16px !important; font-size: 16px; line-height: 1.9; color: var(--kc-text-2); }
+.kc-ind-items { margin-top: 20px !important; display: grid; gap: 10px; }
+.kc-ind-items li { display: flex; align-items: flex-start; gap: 8px; font-size: 15px; }
+.kc-ind-items .material-symbols-outlined { font-size: 18px; color: var(--kc-accent); flex: none; margin-top: 3px; }
+
+/* 기술 스택 탭 */
+.kc-tabs { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 36px; }
+.kc-tab {
+  height: 42px; padding: 0 20px; border: 1px solid var(--kc-line); border-radius: 999px;
+  background: var(--kc-surface); color: var(--kc-text-2); font-size: 14.5px; font-weight: 600; cursor: pointer;
+  transition: background-color .14s, color .14s, border-color .14s;
+}
+.kc-tab:hover { border-color: var(--kc-accent); color: var(--kc-accent); }
+.kc-tab.on { background: var(--kc-accent); border-color: var(--kc-accent); color: #fff; }
+.kc-chips { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.kc-chip {
+  padding: 11px 22px; border: 1px solid var(--kc-line); border-radius: var(--kc-r-s);
+  background: var(--kc-surface); font-size: 15px; font-weight: 600; box-shadow: var(--kc-shadow);
+}
+
+/* ===== IT 컨설팅: 진행 단계 · 이런 경우 ===== */
+
+/* 진행 단계. 같은 크기 상자 네 개는 "네 개가 다 따로 있다" 는 인상을 준다.
+   실제로는 이어지는 한 흐름이라, 상자를 없애고 세로선으로만 칸을 나눈다. */
+.kc-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-top: 1px solid var(--kc-line); }
+.kc-steps li { padding: 28px 30px 4px 0; }
+.kc-steps li + li { padding-left: 30px; border-left: 1px solid var(--kc-line); }
+.kc-step-no {
+  font-family: 'Hanken Grotesk', sans-serif; font-size: 13px; font-weight: 800;
+  letter-spacing: .1em; color: var(--kc-accent);
+}
+.kc-steps h3 { margin-top: 12px !important; font-size: 19px; font-weight: 800; letter-spacing: -.02em; }
+.kc-steps p { margin-top: 10px !important; font-size: 14.5px; line-height: 1.8; color: var(--kc-text-2); }
+
+/* 섹션 제목이 왼쪽에 붙으므로 목록도 같은 축에서 시작해야 한다.
+   가운데로 모으면 제목과 본문의 왼쪽 선이 어긋난다. */
+.kc-fits { max-width: 820px; margin: 0; display: grid; gap: 0; border-top: 1px solid var(--kc-line); }
+.kc-fits li {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 18px 2px; border-bottom: 1px solid var(--kc-line);
+  font-size: 15.5px; line-height: 1.6; color: var(--kc-text);
+}
+.kc-fits .material-symbols-outlined { flex: none; font-size: 20px; color: var(--kc-accent); margin-top: 1px; }
+
+/* ===== 공지사항 ===== */
+
+.kc-notice { display: grid; gap: 0; border-top: 1px solid var(--kc-line); }
+.kc-notice-item { padding: 26px 2px; border-bottom: 1px solid var(--kc-line); }
+.kc-notice-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.kc-tag { padding: 3px 10px; border-radius: 999px; background: var(--kc-accent-soft); color: var(--kc-accent); font-size: 12px; font-weight: 700; }
+.kc-notice-item h3 { font-size: 18.5px; font-weight: 700; }
+.kc-notice-item h3:hover { color: var(--kc-accent); }
+.kc-notice-item > p { margin-top: 12px !important; max-width: 78ch; font-size: 15px; line-height: 1.8; color: var(--kc-text-2); }
+.kc-notice-meta { margin-top: 16px; display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--kc-text-3); }
+.kc-notice-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.kc-notice-meta .material-symbols-outlined { font-size: 16px; }
+
+/* ===== 문의 폼 ===== */
+
+.kc-form { max-width: 720px; margin: 0; display: grid; gap: 22px; }
+.kc-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.kc-field { display: flex; flex-direction: column; gap: 7px; }
+.kc-field > span { font-size: 14px; font-weight: 600; color: #374151; }
+.kc-req { color: #b3261e; margin-left: 2px; }
+.kc-field input, .kc-field select, .kc-field textarea {
+  height: 48px; padding: 0 14px; border: 1px solid var(--kc-line); border-radius: var(--kc-r-s);
+  background: var(--kc-surface-2); color: var(--kc-text); font: inherit; outline: none;
+  transition: border-color .12s, box-shadow .12s, background-color .12s;
+}
+.kc-field textarea { height: auto; padding: 13px 14px; min-height: 170px; resize: vertical; line-height: 1.7; }
+.kc-field :is(input, select, textarea):focus { border-color: var(--kc-accent); background: #fff; box-shadow: 0 0 0 3px rgb(47 111 235 / 12%); }
+/* 이메일 아이디 + @도메인. 가운데 @ 는 입력칸이 아니라 구분 기호다. */
+.kc-email { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; }
+.kc-email-at { font-size: 15px; color: var(--kc-text-3); }
+/* 문의 폼 안의 고르는 칩(관심 기능). 화면에 늘어놓는 기존 .kc-chip 은 가운데 정렬에
+   그림자가 있는 표시용이라, 폼 안에서는 왼쪽 축에 맞추고 누를 수 있게 바꾼다. */
+.kc-form .kc-chips { justify-content: flex-start; gap: 10px; margin-top: 8px; }
+.kc-form .kc-chip {
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  padding: 10px 16px; box-shadow: none; font-size: 14.5px;
+  transition: border-color .14s, color .14s, background-color .14s;
+}
+.kc-form .kc-chip input { width: 16px; height: 16px; margin: 0; accent-color: var(--kc-accent); }
+.kc-form .kc-chip:hover { border-color: var(--kc-accent); }
+.kc-form .kc-chip.on { border-color: var(--kc-accent); color: var(--kc-accent); background: rgb(47 111 235 / 7%); }
+
+.kc-check { display: flex; align-items: flex-start; gap: 9px; font-size: 14.5px; color: var(--kc-text-2); cursor: pointer; }
+.kc-check input { margin-top: 3px; width: 17px; height: 17px; accent-color: var(--kc-accent); flex: none; }
+.kc-form-actions { display: flex; }
+.kc-form-actions .kc-btn { min-width: 200px; }
+/* 서버 메시지를 그대로 보여준다. 프론트에서 문구를 새로 지어내지 않는다(EXPRISM 규칙). */
+.kc-alert { padding: 13px 16px; border-radius: var(--kc-r-s); font-size: 14.5px; font-weight: 600; }
+.kc-alert-err { background: #fdeceb; color: #b3261e; }
+.kc-alert-ok { background: #e7f5ec; color: #1a7f42; }
+
+/* ===== 푸터 ===== */
+
+.kc-foot { background: var(--kc-ink); color: rgb(226 235 250 / 62%); padding: 64px 0 26px; }
+.kc-foot-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 40px; }
+.kc-foot h4 { font-family: 'Hanken Grotesk', sans-serif; font-size: 21px; font-weight: 800; letter-spacing: .14em; color: #fff; }
+.kc-foot h5 { font-size: 16px; font-weight: 700; color: #fff; }
+.kc-foot p { margin-top: 12px !important; font-size: 14px; line-height: 1.8; }
+.kc-foot-links { margin-top: 16px !important; display: grid; gap: 10px; font-size: 14px; }
+.kc-foot-links a:hover { color: #7dabff; }
+.kc-foot-bar {
+  margin-top: 44px; padding-top: 22px; border-top: 1px solid rgb(255 255 255 / 10%);
+  font-size: 12.5px; text-align: center; color: rgb(226 235 250 / 45%);
+}
+
+/* ===== 태블릿 ===== */
+
+@media (max-width: 960px) {
+  .kc-biz { grid-template-columns: repeat(2, 1fr); }
+  .kc-split, .kc-ind { grid-template-columns: 1fr; gap: 32px; }
+
+  /* 세로선으로 나눈 칸들이 한 줄로 접히면 선의 방향이 바뀌어야 한다.
+     세로선을 지우고 가로선으로 갈아 끼운다. */
+  .kc-vision { grid-template-columns: 1fr; }
+  .kc-vision-card { padding: 28px 0 24px; border-bottom: 1px solid var(--kc-line); }
+  .kc-vision-card + .kc-vision-card { padding-left: 0; border-left: 0; }
+
+  .kc-steps { grid-template-columns: 1fr 1fr; }
+  .kc-steps li { padding: 26px 26px 22px 0; }
+  .kc-steps li + li { padding-left: 26px; }
+  /* 2열이 되면 3번째부터는 윗줄이 필요하고, 왼쪽 칸에는 세로선이 없어야 한다. */
+  .kc-steps li:nth-child(2n + 1) { padding-left: 0; border-left: 0; }
+  .kc-steps li:nth-child(n + 3) { border-top: 1px solid var(--kc-line); padding-top: 26px; }
+
+  .kc-greet { grid-template-columns: 1fr; gap: 34px; }
+  /* 1열로 접히면 사진이 화면 폭을 다 먹는다. 사진과 이력을 함께 가운데로 묶는다. */
+  .kc-greet-side { max-width: 460px; margin: 0 auto; width: 100%; }
+  /* 1열로 접히면 이미지가 글 아래로 가는 게 자연스럽다. 좌우 번갈이를 푼다. */
+  .kc-ind.rev .kc-ind-img { order: 0; }
+  .kc-foot-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ===== 모바일 ===== */
+
+@media (max-width: 640px) {
+  .kc-sec { padding: 56px 0; }
+  .kc-wrap, .kc-head-inner, .kc-hero-inner { padding-left: 20px; padding-right: 20px; }
+  .kc-nav { display: none; }
+  .kc-burger { display: block; }
+  .kc-hero { min-height: 88svh; }
+  .kc-hero-actions { flex-direction: column; }
+  .kc-hero-actions .kc-btn { width: 100%; }
+  .kc-biz { grid-template-columns: 1fr; }
+
+  /* 단계는 한 줄에 하나씩. 세로선을 지우고 항목 사이를 가로선으로 끊는다. */
+  .kc-steps { grid-template-columns: 1fr; }
+  .kc-steps li { padding: 22px 0 20px; border-left: 0 !important; padding-left: 0 !important; }
+  .kc-steps li + li { border-top: 1px solid var(--kc-line); }
+
+  /* 언론 보도는 좁은 화면에서 매체·제목·날짜를 한 줄에 다 넣을 수 없다. 세로로 쌓는다. */
+  .kc-press a { grid-template-columns: 1fr; gap: 9px; padding: 18px 2px; }
+  .kc-press-foot { justify-content: flex-start; }
+
+  /* 소식 목록도 같은 이유로 쌓는다. 한 줄에 두면 제목이 두 줄로 접히면서
+     날짜와 세로로 어긋나 읽는 순서가 헷갈린다. */
+  .kc-feed a { flex-direction: column; align-items: flex-start; gap: 5px; }
+  .kc-sec-tight { padding: 40px 0; }
+  .kc-row, .kc-email, .kc-info-pair { grid-template-columns: 1fr; }
+  .kc-email-at { display: none; }
+  .kc-biz-card { padding: 24px 22px 26px; }
+  .kc-notice-item { padding: 20px 20px 22px; }
+  .kc-map { height: 300px; }
+  .kc-foot-grid { grid-template-columns: 1fr; gap: 30px; }
+  .kc-cta-inner { padding: 64px 20px; }
+}
+
+/* ===== 공지 게시판 (2026-09-11) =====
+   목록은 기존 .kc-notice 선 기반 구성을 그대로 쓰고, 여기서는 그 위에 얹는
+   분류 고르기 / 페이지 이동 / 상세 본문만 더한다.
+   카드 껍데기를 새로 만들지 않는다 - 이 사이트는 가로선으로 구분한다. */
+
+/* 분류 고르기. 왼쪽 정렬이 기본이라 .kc-chips(가운데)를 쓰지 않고 따로 둔다. */
+.kc-notice-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+.kc-notice-chip {
+  height: 34px; padding: 0 15px; border: 1px solid var(--kc-line); border-radius: 999px;
+  background: var(--kc-surface); color: var(--kc-text-2);
+  font-size: 13.5px; font-weight: 600; cursor: pointer; transition: .15s;
+}
+.kc-notice-chip:hover { border-color: var(--kc-accent); color: var(--kc-accent); }
+.kc-notice-chip.on { border-color: var(--kc-accent); background: var(--kc-accent); color: #fff; }
+
+/* 목록 한 줄 전체가 링크다. 제목만 누르게 하면 표적이 작아 모바일에서 잘 안 눌린다. */
+.kc-notice-link { display: block; color: inherit; }
+.kc-notice-link:hover h3 { color: var(--kc-accent); }
+
+.kc-tag-pin { background: var(--kc-accent); color: #fff; }
+
+.kc-pager { margin-top: 36px; display: flex; align-items: center; gap: 16px; }
+.kc-pager-btn {
+  height: 40px; padding: 0 18px; border: 1px solid var(--kc-line); border-radius: var(--kc-r-s);
+  background: var(--kc-surface); color: var(--kc-text); font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.kc-pager-btn:hover:not(:disabled) { border-color: var(--kc-accent); color: var(--kc-accent); }
+.kc-pager-btn:disabled { opacity: .4; cursor: default; }
+.kc-pager-info { font-size: 14px; color: var(--kc-text-3); }
+
+/* ----- 상세 ----- */
+.kc-article { max-width: 820px; }
+.kc-article-title {
+  margin-top: 14px; font-size: clamp(26px, 3.2vw, 34px); font-weight: 800;
+  line-height: 1.35; letter-spacing: -.02em;
+}
+.kc-article-meta { margin-top: 18px; padding-bottom: 22px; border-bottom: 1px solid var(--kc-line); }
+
+/* 에디터가 만든 HTML 이 들어온다. 태그별 기본 모양을 여기서 정해 준다. */
+.kc-article-body { padding: 30px 0 40px; font-size: 16px; line-height: 1.9; color: var(--kc-text); }
+.kc-article-body > * + * { margin-top: 16px; }
+.kc-article-body h1, .kc-article-body h2, .kc-article-body h3 {
+  margin-top: 34px; font-weight: 700; line-height: 1.45;
+}
+.kc-article-body h1 { font-size: 24px; }
+.kc-article-body h2 { font-size: 21px; }
+.kc-article-body h3 { font-size: 18px; }
+/* 전역 reset 이 ul 의 list-style 을 없애 두었다. 본문은 에디터가 만든 임의의 HTML 이 들어오므로
+   여기서만 되살린다(li 에 revert 를 걸면 ul 쪽 선언이 이겨서 불릿이 안 나온다). */
+.kc-article-body ul { list-style: disc; padding-left: 22px; }
+.kc-article-body ol { list-style: decimal; padding-left: 22px; }
+.kc-article-body li { margin-top: 8px; }
+.kc-article-body li::marker { color: var(--kc-text-3); }
+.kc-article-body a { color: var(--kc-accent); text-decoration: underline; }
+.kc-article-body img { max-width: 100%; height: auto; border-radius: var(--kc-r); }
+.kc-article-body blockquote {
+  padding: 4px 0 4px 18px; border-left: 3px solid var(--kc-accent); color: var(--kc-text-2);
+}
+.kc-article-body table { width: 100%; border-collapse: collapse; }
+.kc-article-body th, .kc-article-body td {
+  padding: 10px 12px; border: 1px solid var(--kc-line); text-align: left; font-size: 15px;
+}
+.kc-article-body th { background: var(--kc-surface-2); font-weight: 700; }
+/* 넓은 표가 페이지를 가로로 밀지 않게 본문 안에서만 스크롤한다. */
+.kc-article-body { overflow-x: auto; }
+
+.kc-article-nav {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+  border-top: 1px solid var(--kc-line); border-bottom: 1px solid var(--kc-line);
+}
+.kc-article-nav-item {
+  display: block; padding: 20px 22px 20px 0; color: inherit; min-width: 0;
+}
+.kc-article-nav-item + .kc-article-nav-item { border-left: 1px solid var(--kc-line); padding-left: 22px; }
+.kc-article-nav-item.is-empty { color: var(--kc-text-3); font-size: 14px; }
+.kc-article-nav-label { display: block; font-size: 12.5px; font-weight: 700; color: var(--kc-accent); }
+.kc-article-nav-title {
+  display: block; margin-top: 6px; font-size: 15px; font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+a.kc-article-nav-item:hover .kc-article-nav-title { color: var(--kc-accent); }
+
+.kc-article-actions { margin-top: 34px; }
+
+@media (max-width: 720px) {
+  .kc-article-nav { grid-template-columns: 1fr; }
+  .kc-article-nav-item + .kc-article-nav-item {
+    border-left: 0; border-top: 1px solid var(--kc-line); padding-left: 0;
+  }
+}
+
+/* ===== 회사소개 · 브랜드 아이덴티티 섹션 ===== */
+.kc-brand-gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.kc-brand-item { margin: 0; }
+.kc-brand-thumb {
+  display: grid; place-items: center; aspect-ratio: 4 / 3; padding: 20px;
+  background: #fff; border: 1px solid var(--kc-line); border-radius: var(--kc-r);
+}
+.kc-brand-thumb img { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; }
+.kc-brand-item figcaption { margin-top: 12px; }
+.kc-brand-item figcaption strong { display: block; font-size: 14px; font-weight: 800; color: var(--kc-text); }
+.kc-brand-item figcaption span { font-size: 12.5px; color: var(--kc-text-3); }
+@media (max-width: 720px) { .kc-brand-gallery { grid-template-columns: repeat(2, 1fr); gap: 14px; } }
+.kc-brand-values {
+  list-style: none; margin: 28px 0 0; padding: 0;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+}
+.kc-brand-values li {
+  display: flex; flex-direction: column; gap: 4px;
+  padding-left: 14px; border-left: 2px solid var(--kc-accent);
+}
+.kc-brand-values strong { font-size: 15px; font-weight: 800; color: var(--kc-accent); letter-spacing: .01em; }
+.kc-brand-values span { font-size: 14px; color: var(--kc-ink-2); }
+@media (max-width: 720px) {
+  .kc-brand-values { grid-template-columns: repeat(2, 1fr); gap: 14px 16px; }
+}

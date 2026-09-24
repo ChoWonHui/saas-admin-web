@@ -2,16 +2,42 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- 파비콘도 이미지 서버(S3+CloudFront). 이 도메인(kanchenjunga.co.kr)은 KANCHENJUNGA 아이콘. -->
+    <link rel="icon" type="image/png" href="https://d2ziky4ycezd5d.cloudfront.net/saas-admin/brand/kanchenjunga/favicon-kc.png" />
+    <!-- '홈 화면에 추가' 아이콘. iOS 는 apple-touch-icon, 안드로이드는 manifest 의 icons 를 쓴다.
+         콘솔(/console)을 앱처럼 추가할 때 EXPRISM 로고가 뜨게 한다. -->
+    <link rel="apple-touch-icon" href="https://d2ziky4ycezd5d.cloudfront.net/saas-admin/brand/exprism-icon-v2.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2f6feb" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="EXPRISM" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="EXPRISM — We express your vision through innovation." />
-    <title>EXPRISM Admin</title>
+    <!-- 이 도메인(kanchenjunga.co.kr)의 공개 얼굴은 KANCHENJUNGA 회사 소개 사이트(root)다.
+         크롤러가 JS 없이 읽도록 회사 정보로 title·description·OG 를 정적 head 에 박는다.
+         콘솔(/admin·/console)은 robots 로 색인에서 제외한다. -->
+    <meta name="description" content="KANCHENJUNGA(칸첸중가)는 홈페이지 제작과 IT 솔루션을 제공하는 기술 파트너입니다. 고객의 비즈니스 성장을 위한 맞춤형 웹·시스템 개발과 운영을 지원합니다." />
+    <meta name="keywords" content="칸첸중가, KANCHENJUNGA, 홈페이지 제작, IT 솔루션, 웹 개발, 시스템 개발, 기술 파트너" />
+    <meta name="naver-site-verification" content="eb1694c0ae38ef4aeb64162d7adbbb2012a8bacd" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="KANCHENJUNGA" />
+    <meta property="og:title" content="KANCHENJUNGA 칸첸중가 | 홈페이지 제작·IT 솔루션" />
+    <meta property="og:description" content="홈페이지 제작과 IT 솔루션을 제공하는 기술 파트너 KANCHENJUNGA(칸첸중가)." />
+    <meta property="og:url" content="https://kanchenjunga.co.kr/" />
+    <meta property="og:image" content="https://d2ziky4ycezd5d.cloudfront.net/saas-admin/brand/kanchenjunga/combined.png" />
+    <title>KANCHENJUNGA 칸첸중가 | 홈페이지 제작·IT 솔루션</title>
     <!-- 업체 콘솔 Material Design 3 테마용 폰트/아이콘 -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&family=Montserrat:wght@700;800&display=swap"
       rel="stylesheet"
+    />
+    <!-- 회사 소개 사이트(root, /company …) 본문 글꼴. 콘솔도 Pretendard 를 쓴다. -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
     />
     <link
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap"

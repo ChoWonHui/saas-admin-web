@@ -86,6 +86,9 @@ export default function PermissionsPage() {
 
   // 트리 연동용: 조상(부모→…→루트)과 자손(모든 하위) 목록
   const menuById = Object.fromEntries(menuRows.map((m) => [m.id, m]))
+  // 대시보드는 직급·부서의 '기본' 메뉴다 — 로그인하면 누구나 접근하고, 권한에서 뺄 수 없다.
+  // (서버도 유효 메뉴에 대시보드를 항상 포함한다) 화면에선 항상 체크·비활성으로 보인다.
+  const isBaseMenu = (m) => m.url === '/dashboard'
   function ancestorsOf(id) {
     const res = []
     let cur = menuById[id]?.parentId
@@ -239,9 +242,15 @@ export default function PermissionsPage() {
                       {menuRows.map((m) => (
                         <li key={m.id} className="perm-menu-item" style={{ paddingLeft: 14 + m.depth * 22 }}>
                           <label className="check">
-                            <input type="checkbox" checked={deptChecked.has(m.id)} onChange={() => toggleDept(m.id)} />
+                            <input
+                              type="checkbox"
+                              checked={isBaseMenu(m) || deptChecked.has(m.id)}
+                              disabled={isBaseMenu(m)}
+                              onChange={() => { if (!isBaseMenu(m)) toggleDept(m.id) }}
+                            />
                             {m.name}
                             {m.url && <span className="mono perm-menu-url">{m.url}</span>}
+                            {isBaseMenu(m) && <span className="perm-locked">기본</span>}
                           </label>
                         </li>
                       ))}
@@ -261,7 +270,8 @@ export default function PermissionsPage() {
                     {selectedTitle ? (
                       <ul className="perm-menu-list">
                         {menuRows.map((m) => {
-                          const inDept = deptChecked.has(m.id)
+                          const base = isBaseMenu(m)
+                          const inDept = base || deptChecked.has(m.id)
                           return (
                             <li
                               key={m.id}
@@ -272,13 +282,14 @@ export default function PermissionsPage() {
                               <label className="check">
                                 <input
                                   type="checkbox"
-                                  checked={titleChecked.has(m.id)}
-                                  disabled={!inDept}
-                                  onChange={() => toggleTitle(m.id)}
+                                  checked={base || titleChecked.has(m.id)}
+                                  disabled={base || !inDept}
+                                  onChange={() => { if (!base) toggleTitle(m.id) }}
                                 />
                                 {m.name}
                                 {m.url && <span className="mono perm-menu-url">{m.url}</span>}
-                                {!inDept && <span className="perm-locked">부서 미허용</span>}
+                                {base && <span className="perm-locked">기본</span>}
+                                {!base && !inDept && <span className="perm-locked">부서 미허용</span>}
                               </label>
                             </li>
                           )
