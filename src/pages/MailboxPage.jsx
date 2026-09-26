@@ -7,16 +7,26 @@ import { fileApi, mailboxApi } from '../api/client'
 
 function fmt(dt) {
   if (!dt) return '-'
-  const d = dt.slice(0, 16).replace('T', ' ')
   const today = new Date().toISOString().slice(0, 10)
-  // 오늘 온 메일은 시각만 보여준다. 목록에서 날짜가 같은 줄이 길게 반복되지 않게.
-  return dt.slice(0, 10) === today ? dt.slice(11, 16) : d
+  const time = dt.slice(11, 16) // HH:MM
+  // 오늘 → 시각만, 올해 → MM.DD HH:MM, 그 이전 → YYYY.MM.DD HH:MM (네이버처럼 날짜+시간).
+  if (dt.slice(0, 10) === today) return time
+  if (dt.slice(0, 4) === String(new Date().getFullYear())) return `${dt.slice(5, 7)}.${dt.slice(8, 10)} ${time}`
+  return `${dt.slice(0, 4)}.${dt.slice(5, 7)}.${dt.slice(8, 10)} ${time}`
 }
 
 function sizeText(bytes) {
   if (bytes < 1024) return `${bytes}B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`
   return `${(bytes / 1024 / 1024).toFixed(1)}MB`
+}
+
+// 숫자 페이저에 보여줄 페이지 창(현재 페이지 주변 최대 5개). 0-based 인덱스를 돌려준다.
+function pageWindow(cur, total, span = 5) {
+  let start = Math.max(0, cur - Math.floor(span / 2))
+  const end = Math.min(total, start + span)
+  start = Math.max(0, end - span)
+  return Array.from({ length: end - start }, (_, i) => start + i)
 }
 
 // 첨부 파일 확장자 배지(GIF/PNG/PDF …). 확장자가 없으면 FILE.
@@ -292,18 +302,17 @@ function MailList({ folder, folders, onOpen, onIds, onChanged, onError }) {
         </div>
       ) : (
         <div className="table-wrap">
+          {/* 네이버 메일함처럼 컬럼 헤더 없이 행만. 폭은 colgroup 으로 고정(table-layout: fixed). */}
           <table className="table mail-table">
-            <thead>
-              <tr>
-                <th style={{ width: 40 }} aria-label="선택" />
-                <th style={{ width: 34 }} aria-label="별표" />
-                <th style={{ width: 32 }} aria-label="읽음" />
-                <th style={{ width: 170 }}>{sentLike ? '받는 사람' : '보낸 사람'}</th>
-                <th className="col-grow">제목</th>
-                <th style={{ width: 44 }}>첨부</th>
-                <th style={{ width: 120 }}>날짜</th>
-              </tr>
-            </thead>
+            <colgroup>
+              <col className="mc-col-check" />
+              <col className="mc-col-star" />
+              <col className="mc-col-read" />
+              <col className="mc-col-sender" />
+              <col />
+              <col className="mc-col-attach" />
+              <col className="mc-col-date" />
+            </colgroup>
             <tbody>
               {rows.map((m) => (
                 <tr
@@ -329,17 +338,21 @@ function MailList({ folder, folders, onOpen, onIds, onChanged, onError }) {
                       {m.unread ? 'mail' : 'drafts'}
                     </span>
                   </td>
-                  <td className="muted-cell">
+                  <td className="mail-sender">
                     {sentLike ? (m.toAddress || '(받는 사람 없음)') : (m.fromName || m.fromAddress)}
                   </td>
-                  <td className="strong">
-                    {m.shared && <span className="badge badge-active">공용</span>}{' '}
-                    {m.subject || '(제목 없음)'}
+                  <td className="mail-subj">
+                    {sentLike
+                      ? null
+                      : (m.shared
+                        ? <span className="badge badge-active mail-tag">공용</span>
+                        : <span className="mail-to">TO</span>)}
+                    <span className="mail-subj-text">{m.subject || '(제목 없음)'}</span>
                   </td>
-                  <td className="muted-cell">
+                  <td className="mail-attach-cell">
                     {m.hasAttachment && <span className="material-symbols-outlined mail-clip" aria-label="첨부">attach_file</span>}
                   </td>
-                  <td className="muted-cell">{fmt(m.sentAt)}</td>
+                  <td className="mail-date">{fmt(m.sentAt)}</td>
                 </tr>
               ))}
             </tbody>
@@ -348,10 +361,14 @@ function MailList({ folder, folders, onOpen, onIds, onChanged, onError }) {
       )}
 
       {data.totalPages > 1 && (
-        <div className="pager">
-          <button className="btn-ghost btn-sm" disabled={page === 0} onClick={() => setPage(page - 1)}>이전</button>
-          <span className="pager-info">{page + 1} / {data.totalPages}</span>
-          <button className="btn-ghost btn-sm" disabled={page >= data.totalPages - 1} onClick={() => setPage(page + 1)}>다음</button>
+        <div className="mail-pager">
+          <button disabled={page === 0} onClick={() => setPage(0)} aria-label="처음">&laquo;</button>
+          <button disabled={page === 0} onClick={() => setPage(page - 1)} aria-label="이전">&lsaquo;</button>
+          {pageWindow(page, data.totalPages).map((p) => (
+            <button key={p} className={p === page ? 'on' : ''} onClick={() => setPage(p)}>{p + 1}</button>
+          ))}
+          <button disabled={page >= data.totalPages - 1} onClick={() => setPage(page + 1)} aria-label="다음">&rsaquo;</button>
+          <button disabled={page >= data.totalPages - 1} onClick={() => setPage(data.totalPages - 1)} aria-label="마지막">&raquo;</button>
         </div>
       )}
     </>
