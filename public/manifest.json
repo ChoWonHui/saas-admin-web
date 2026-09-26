@@ -2,20 +2,20 @@
   "name": "EXPRISM Admin",
   "short_name": "EXPRISM",
   "description": "EXPRISM 관리 콘솔",
-  "start_url": "/console/dashboard",
+  "start_url": "/console/9f7a3d81/login",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2f6feb",
   "icons": [
     {
-      "src": "https://d2ziky4ycezd5d.cloudfront.net/saas-admin/brand/exprism-icon-v2.png",
+      "src": "https://d2ziky4ycezd5d.cloudfront.net/saas-admin/brand/kanchenjunga/app-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://d2ziky4ycezd5d.cloudfront.net/saas-admin/brand/exprism-icon-v2.png",
+      "src": "https://d2ziky4ycezd5d.cloudfront.net/saas-admin/brand/kanchenjunga/app-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
