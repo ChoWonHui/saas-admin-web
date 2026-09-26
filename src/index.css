@@ -339,7 +339,7 @@ input {
 .content {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 28px 32px;
+  padding: 22px 26px;
 }
 
 .page-head {
@@ -4310,6 +4310,15 @@ tr.drop-into td {
 /* 안 읽은 메일은 굵게. 목록에서 바로 갈리게 한다. */
 .mail-table .mail-unread td { font-weight: 700; }
 
+/* 목록 표 — 제목이 길어도 가로 스크롤이 생기지 않게 말줄임(…) 처리. 글자·여백도 네이버처럼 촘촘히. */
+.mail-table { table-layout: fixed; font-size: 13px; }
+.mail-table th, .mail-table td { overflow: hidden; text-overflow: ellipsis; padding: 8px 12px; }
+.mail-table .col-grow { min-width: 0; }               /* 제목 열이 남는 폭만 쓰고 넘치면 말줄임 */
+/* 아이콘/체크박스 열은 잘림 방지(포커스링 등). */
+.mail-table .mail-check, .mail-table .mail-star, .mail-table .mail-readicon { overflow: visible; padding-left: 6px; padding-right: 6px; }
+/* 표를 감싼 래퍼가 가로 스크롤을 만들지 않도록(내용이 이미 말줄임됨). */
+.mail-main .table-wrap { overflow-x: hidden; }
+
 .mail-detail .notice-meta { line-height: 1.9; }
 
 .mail-attachments { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
@@ -4467,7 +4476,7 @@ tr.drop-into td {
 
 /* ===== 메일 상세(참고안 카드 · 콘솔 토큰) ===== */
 .md-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
-.md-head { padding: 22px 24px; border-bottom: 1px solid #eef1f4; }
+.md-head { padding: 16px 18px; border-bottom: 1px solid #eef1f4; }
 .md-head-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .md-tags { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
 .md-tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
@@ -4488,7 +4497,7 @@ tr.drop-into td {
 .md-recip em { color: #94a3b8; font-style: normal; font-weight: 600; margin-right: 5px; }
 .md-recip-cc { min-width: 0; }
 
-.md-attach { padding: 14px 24px; background: #fafbfc; border-bottom: 1px solid #eef1f4; }
+.md-attach { padding: 12px 18px; background: #fafbfc; border-bottom: 1px solid #eef1f4; }
 .md-attach-head { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #334155; margin-bottom: 10px; }
 .md-attach-head .material-symbols-outlined { font-size: 18px; color: #64748b; }
 .md-attach-head strong { color: var(--accent); }
@@ -4505,7 +4514,7 @@ tr.drop-into td {
 .md-attach-dl { font-size: 16px; color: #94a3b8; }
 .md-attach-item:hover .md-attach-dl { color: var(--accent); }
 
-.md-body { padding: 24px 28px; }
+.md-body { padding: 18px 20px; }
 .md-body-text { white-space: pre-wrap; font-size: 15px; line-height: 1.75; color: #1f2937; word-break: break-word; }
 /* 카드 안이라 본문 프레임 테두리는 없앤다. 높이는 JS 가 내용에 맞춰 늘린다(상한 없음). */
 .md-body .mail-body-frame { border: 0; border-radius: 0; }
