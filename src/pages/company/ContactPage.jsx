@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import SiteShell, { SubHead, SecHead, isProductHost } from '../../components/company/SiteShell'
 import { CONTACT, EMAIL_DOMAINS, EXPRISM_LEAD } from '../../company-data'
+import { homeInquiryApi } from '../../api/homeClient'
 
 const DIRECT = '__direct__'
 
@@ -75,24 +76,17 @@ export default function ContactPage() {
     e.preventDefault()
     setState({ sending: true, error: '', done: false, mailto: '' })
 
+    // 무인증 공개 문의 접수. 서버가 DB 에 저장하고 공통코드(KCJG_CONTACT_EMAIL)에 등록된
+    // 담당자 주소로 알림 메일을 보낸다. 받는 주소를 프런트가 정하지 않는다(스팸 중계 방지).
     const payload = {
-      name: form.name, phone: form.phone, email, subject, message: buildBody(),
-      ...(lead ? { store: form.store, size: form.size, timing: form.timing, interests: form.interests } : {}),
+      siteType: lead ? 'EXPRISM' : 'KANCHENJUNGA',
+      name: form.name, phone: form.phone, email, subject,
+      content: form.message,
+      ...(lead ? { storeName: form.store, storeSize: form.size, openTiming: form.timing, interests: form.interests } : {}),
     }
 
     try {
-      const res = await fetch('/api-proxy/home/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      if (!res.ok) {
-        // 서버가 응답은 했지만 거절한 경우 — 서버 메시지를 그대로 보여준다.
-        const text = await res.text()
-        let msg = `전송하지 못했습니다. (${res.status})`
-        try { msg = JSON.parse(text)?.message || msg } catch { /* JSON 이 아니면 기본 문구를 쓴다 */ }
-        throw new Error(msg)
-      }
+      await homeInquiryApi.create(payload)
       setState({ sending: false, error: '', done: true, mailto: '' })
       setForm((f) => ({ ...f, subject: '', message: '', privacy: false, interests: [] }))
     } catch (err) {
