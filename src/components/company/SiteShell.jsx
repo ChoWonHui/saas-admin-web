@@ -421,7 +421,7 @@ function SiteFooter() {
             <h5>고객지원</h5>
             <ul className="kc-foot-links">
               <li>
-                <a href={`mailto:${CONTACT.email}`}>이메일 문의</a>
+                <Link to="/contact">이메일 문의</Link>
               </li>
               {/* 관리자 콘솔 로그인. 이 도메인(kanchenjunga.co.kr) 안에 콘솔이 있어 상대경로로 연다. */}
               <li>
