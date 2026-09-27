@@ -423,9 +423,9 @@ function SiteFooter() {
               <li>
                 <a href={`mailto:${CONTACT.email}`}>이메일 문의</a>
               </li>
-              {/* 관리자 콘솔. 호스팅에 /admin 경로가 이미 있어 /mng 를 쓴다. */}
+              {/* 관리자 콘솔 로그인. 이 도메인(kanchenjunga.co.kr) 안에 콘솔이 있어 상대경로로 연다. */}
               <li>
-                <a href="/mng/login.html">관리자</a>
+                <a href="/console/9f7a3d81/login">관리자</a>
               </li>
             </ul>
           </div>
