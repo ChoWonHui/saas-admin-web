@@ -4,6 +4,7 @@ import Toast from '../components/Toast'
 import Loading from '../components/Loading'
 import RichEditor from '../components/RichEditor'
 import { fileApi, mailboxApi } from '../api/client'
+import { pushState, enablePush, disablePush } from '../push'
 
 function fmt(dt) {
   if (!dt) return '-'
@@ -75,6 +76,24 @@ export default function MailboxPage() {
   const [detail, setDetail] = useState(null)
   const [compose, setCompose] = useState(null) // { to, cc, bcc, subject, content, draftId }
   const [listIds, setListIds] = useState([]) // 현재 목록의 메일 id 순서 — 읽기 화면의 이전/다음에 쓴다
+  const [push, setPush] = useState('off') // 새 메일 푸시 알림: unsupported | denied | on | off | busy
+
+  // 진입 시 현재 푸시 상태를 읽어 버튼에 반영한다.
+  useEffect(() => { pushState().then(setPush) }, [])
+
+  // 알림 켜기/끄기 토글.
+  const togglePush = async () => {
+    if (push === 'busy') return
+    const prev = push
+    setPush('busy')
+    try {
+      setPush(prev === 'on' ? await disablePush() : await enablePush())
+      setNotice(prev === 'on' ? '새 메일 알림을 껐습니다.' : '새 메일 알림을 켰습니다.')
+    } catch (e) {
+      setPush(prev)
+      setError(e.message)
+    }
+  }
 
   useEffect(() => {
     mailboxApi.me().then(setMe).catch((e) => setError(e.message))
@@ -110,6 +129,20 @@ export default function MailboxPage() {
         <h2>메일함</h2>
         {me && <span className="count">{me.name} · {me.address}</span>}
         <div className="page-actions">
+          {push !== 'unsupported' && (
+            <button
+              type="button"
+              className={`btn-ghost btn-sm${push === 'on' ? ' on' : ''}`}
+              onClick={togglePush}
+              disabled={push === 'busy' || push === 'denied'}
+              title={push === 'denied' ? '브라우저에서 알림이 차단되어 있습니다. 사이트 설정에서 허용해 주세요.' : '새 메일이 오면 알림을 받습니다.'}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px', verticalAlign: 'middle', marginRight: '4px' }}>
+                {push === 'on' ? 'notifications_active' : 'notifications_off'}
+              </span>
+              {push === 'on' ? '알림 끄기' : '알림 켜기'}
+            </button>
+          )}
           <button
             className="btn-ghost btn-sm"
             onClick={async () => {
@@ -489,7 +522,6 @@ function MailDetail({ detail, me, folders, prevId, nextId, onNavigate, onBack, o
               </div>
               <h1 className="md-subject">{detail.subject || '(제목 없음)'}</h1>
             </div>
-            <span className="md-date">{detail.sentAt?.slice(0, 16).replace('T', ' ')}</span>
           </div>
           <div className="md-sender">
             <div className="md-avatar">{(detail.fromName || detail.fromAddress || '?').trim().charAt(0).toUpperCase()}</div>
@@ -503,6 +535,8 @@ function MailDetail({ detail, me, folders, prevId, nextId, onNavigate, onBack, o
                 {detail.ccAddress && <span className="md-recip-cc"><em>참조</em>{detail.ccAddress}</span>}
               </div>
             </div>
+            {/* 날짜·시간은 네이버처럼 발신자 박스 오른쪽에 함께 둔다. */}
+            <span className="md-date">{fmt(detail.sentAt)}</span>
           </div>
         </section>
 

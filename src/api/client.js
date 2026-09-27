@@ -438,6 +438,14 @@ export const homeNoticeApi = {
 
 // 관리자 메일함. 내부 직원이 자기 사번 주소({사번}@kanchenjunga.co.kr)로 주고받는다.
 // 받은 메일은 백엔드가 메일 서버에서 IMAP 으로 가져와 DB 에 쌓아 둔 것을 읽는다.
+// 웹 푸시 구독. 새 메일 알림을 브라우저/PWA 로 받기 위한 것.
+export const pushApi = {
+  vapidPublicKey: () => api('/api/platform-admin/push/vapid-public-key'),
+  subscribe: (body) => api('/api/platform-admin/push/subscriptions', { method: 'POST', body }),
+  unsubscribe: (endpoint) =>
+    api(`/api/platform-admin/push/subscriptions?${new URLSearchParams({ endpoint })}`, { method: 'DELETE' }),
+}
+
 export const mailboxApi = {
   me: () => api('/api/platform-admin/mailbox/me'),
   folders: () => api('/api/platform-admin/mailbox/folders'),
