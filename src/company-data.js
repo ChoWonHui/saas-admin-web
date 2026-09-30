@@ -5,7 +5,7 @@
  * 화면(pages/company/*)과 문구를 분리해 둔다 — 문구는 자주 바뀌고,
  * 바꾸는 사람이 JSX 를 몰라도 되게 하려는 것이다. 여기만 고치면 화면이 따라온다.
  *
- * ⚠️ CONTACT 의 전화번호는 원본이 010-0000-0000 (미입력) 이다. 공개 전에 채울 것.
+ * 대표 전화는 CONTACT.phone 한 곳에서 관리한다(푸터·문의 페이지가 이 값을 쓴다).
  */
 
 /* Unsplash CDN 이미지. auto=format 이 브라우저에 맞춰 webp/avif 로 내려 준다. */
@@ -88,7 +88,7 @@ export const CONTACT = {
   // 주소는 한 곳에서만 관리한다 — 푸터·오시는 길·지도 검색이 모두 이 값을 쓴다.
   address: '서울특별시 마포구 월드컵북로 50길 6-10',
   company: 'KANCHENJUNGA',
-  phone: '010-0000-0000',
+  phone: '02-6013-1717',
   email: 'contact@kanchenjunga.co.kr',
   // 사업자등록번호. 국내 사업자 사이트는 표기 의무가 있어 푸터에 넣는다.
   bizNo: '515-31-02197',

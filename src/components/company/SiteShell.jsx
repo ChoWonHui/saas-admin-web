@@ -403,6 +403,8 @@ function SiteFooter() {
               <br />
               사업자등록번호 {CONTACT.bizNo}
               <br />
+              전화 {CONTACT.phone}
+              <br />
               {CONTACT.email}
             </p>
           </div>
