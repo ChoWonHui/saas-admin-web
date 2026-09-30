@@ -399,11 +399,9 @@ function SiteFooter() {
             <p>
               {CONTACT.address}
               <br />
-              대표 {CONTACT.ceo}
+              대표: {CONTACT.ceo} / TEL: {CONTACT.phone}
               <br />
-              사업자등록번호 {CONTACT.bizNo}
-              <br />
-              대표전화 {CONTACT.phone}
+              사업자등록번호: {CONTACT.bizNo}
               <br />
               {CONTACT.email}
             </p>
