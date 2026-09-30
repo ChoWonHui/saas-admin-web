@@ -257,7 +257,7 @@ export default function ContactPage() {
               좁은 화면에서도 2열로 남고, 그러면 이메일 주소 때문에 가로로 넘친다. */}
           <div className="kc-info">
             <div className="kc-info-card">
-              <h3><span className="material-symbols-outlined">call</span>전화</h3>
+              <h3><span className="material-symbols-outlined">call</span>대표전화</h3>
               <p><a href={`tel:${CONTACT.phone.replace(/[^0-9+]/g, '')}`}>{CONTACT.phone}</a></p>
             </div>
             <div className="kc-info-card">
