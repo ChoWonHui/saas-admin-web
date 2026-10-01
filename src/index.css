@@ -4568,5 +4568,61 @@ tr.drop-into td {
   .mc-editor .editor-canvas { height: auto; min-height: 320px; max-height: 60vh; }
 }
 
+/* ===== 모바일 메일함 — 칩형 폴더 + 카드형 목록 + 플로팅 작성 버튼 ===== */
+/* 플로팅 '메일쓰기' 버튼. 기본은 숨기고 모바일에서만 띄운다. */
+.mail-fab { display: none; position: fixed; right: 18px; bottom: 22px; z-index: 50;
+  align-items: center; gap: 8px; padding: 14px 20px; border: 0; border-radius: 999px;
+  background: var(--accent); color: #fff; font-family: inherit; font-size: 14px; font-weight: 700;
+  cursor: pointer; box-shadow: 0 10px 25px -3px rgba(47, 111, 235, .45); }
+.mail-fab .material-symbols-outlined { font-size: 20px; }
+.mail-fab:active { transform: scale(.96); }
+
+@media (max-width: 640px) {
+  /* 폴더: 세로 목록 → 가로 스크롤 칩 */
+  .mail-side { gap: 10px; }
+  .ms-nav { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; gap: 8px; padding-bottom: 2px;
+    -ms-overflow-style: none; scrollbar-width: none; }
+  .ms-nav::-webkit-scrollbar { display: none; }
+  .ms-folder { width: auto; flex: 0 0 auto; border-radius: 999px; background: #f1f5f9;
+    padding: 8px 14px; font-size: 13px; }
+  .ms-folder-ic { font-size: 16px; }
+  .ms-folder.on { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(47, 111, 235, .25); }
+  .ms-folder.on .ms-folder-ic { color: #fff; }
+  .ms-folder.on .ms-count, .ms-folder.on .ms-badge { color: #fff; background: rgba(255, 255, 255, .22); }
+  /* 작성 버튼은 플로팅 FAB 로 대체 */
+  .mail-side-write { display: none; }
+  .mail-fab { display: inline-flex; }
+
+  /* 목록: 표 → 카드. td 를 그리드 영역에 배치해 [체크][별/봉투][발신자·시간 / 제목] 모양을 만든다. */
+  .mail-table colgroup { display: none; }
+  .mail-table tbody { display: block; }
+  .mail-table tbody tr {
+    display: grid;
+    grid-template-columns: 20px 22px minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "check star sender attach date"
+      "check read subj   subj   subj";
+    column-gap: 8px; row-gap: 3px; align-items: center;
+    padding: 12px 14px; border-bottom: 1px solid #f1f5f9;
+  }
+  .mail-table tbody tr.mail-unread { background: rgba(47, 111, 235, .05); }
+  .mail-table tbody tr:hover td { background: transparent; }
+  .mail-table td { display: block; padding: 0; border: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mail-table .mail-check { grid-area: check; align-self: start; padding-top: 2px; overflow: visible; }
+  .mail-table .mail-star { grid-area: star; align-self: center; overflow: visible; }
+  .mail-table .mail-readicon { grid-area: read; align-self: center; overflow: visible; }
+  .mail-table .mail-sender { grid-area: sender; font-size: 13px; color: #334155; }
+  .mail-table .mail-attach-cell { grid-area: attach; justify-self: end; overflow: visible; }
+  .mail-table .mail-date { grid-area: date; justify-self: end; font-size: 11px; color: #94a3b8; }
+  .mail-table .mail-subj { grid-area: subj; font-size: 12.5px; color: #64748b; font-weight: 400; }
+  .mail-table .mail-unread .mail-sender { font-weight: 700; color: #0f172a; }
+  .mail-table .mail-unread .mail-subj { color: #334155; font-weight: 600; }
+  .mail-table .mail-unread .mail-date { color: var(--accent); font-weight: 700; }
+  .mail-star-btn .material-symbols-outlined { font-size: 18px; }
+  .mail-readicon .material-symbols-outlined { font-size: 17px; }
+  /* 상세·작성 화면에서는 FAB 를 가린다(본문 위에 떠다니지 않게) — JS 로 조건부 렌더하지만 안전장치. */
+}
+
 /* 공통코드 비고 셀 — 긴 URL 이 표를 너무 넓히지 않게 잘라서 보여준다(전체는 title 툴팁). */
 .code-remark { max-width: 320px; overflow: hidden; text-overflow: ellipsis; }

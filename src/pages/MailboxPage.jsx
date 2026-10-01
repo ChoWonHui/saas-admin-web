@@ -225,6 +225,14 @@ export default function MailboxPage() {
           )}
         </section>
       </div>
+
+      {/* 모바일 전용 플로팅 '메일쓰기' 버튼. 목록 화면에서만 띄운다(상세·작성 중에는 숨김). */}
+      {!compose && !detail && (
+        <button type="button" className="mail-fab" onClick={openCompose} aria-label="메일쓰기">
+          <span className="material-symbols-outlined">edit_square</span>
+          메일쓰기
+        </button>
+      )}
     </Shell>
   )
 }
