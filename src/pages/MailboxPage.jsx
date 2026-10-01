@@ -16,6 +16,16 @@ function fmt(dt) {
   return `${dt.slice(0, 4)}.${dt.slice(5, 7)}.${dt.slice(8, 10)} ${time}`
 }
 
+// '마지막 동기화' 상대 시각. 목록을 받은 시점 기준으로 방금/N분/N시간 전으로 보여준다.
+function syncAgo(ts) {
+  const s = Math.max(0, Math.floor((Date.now() - ts) / 1000))
+  if (s < 30) return '방금 전'
+  if (s < 60) return `${s}초 전`
+  const m = Math.floor(s / 60)
+  if (m < 60) return `${m}분 전`
+  return `${Math.floor(m / 60)}시간 전`
+}
+
 function sizeText(bytes) {
   if (bytes < 1024) return `${bytes}B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`
@@ -125,10 +135,17 @@ export default function MailboxPage() {
       <Toast message={error} onClose={() => setError('')} />
       <Toast message={notice} onClose={() => setNotice('')} />
 
-      <div className="page-head">
+      <div className="page-head mail-head">
+        {/* 아바타 — 모바일 프로필 스트립용(데스크톱에서는 CSS 로 숨김). */}
+        {me && <div className="mail-head-avatar">{(me.name || '?').trim().charAt(0).toUpperCase()}</div>}
         <h2>메일함</h2>
         {me && <span className="count">{me.name} · {me.address}</span>}
         <div className="page-actions">
+          {/* 내게쓰기 — 모바일 전용(데스크톱은 좌측 사이드 버튼이 담당). */}
+          <button type="button" className="btn-ghost btn-sm mail-self-btn" onClick={openSelf}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', verticalAlign: 'middle', marginRight: '4px' }}>person</span>
+            내게쓰기
+          </button>
           {push !== 'unsupported' && (
             <button
               type="button"
@@ -246,17 +263,26 @@ function MailList({ folder, folders, onOpen, onIds, onChanged, onError }) {
   const [selected, setSelected] = useState(() => new Set()) // 일괄 처리용 선택
   const [moveTo, setMoveTo] = useState('')
   const [busy, setBusy] = useState(false)
+  const [syncedAt, setSyncedAt] = useState(() => Date.now()) // 마지막으로 목록을 받은 시각
+  // '더 보기'로 누적할지(모바일) 아니면 교체할지(숫자 페이저) 가른다. 클릭 시점에 켠다.
+  const appendRef = useRef(false)
+  const dataRef = useRef({ content: [] }) // 누적을 위해 현재 목록을 참조로 들고 있는다(effect 루프 방지).
 
-  useEffect(() => { setPage(0); setQuery(''); setKeyword(''); setSelected(new Set()) }, [folder])
+  useEffect(() => { setPage(0); setQuery(''); setKeyword(''); setSelected(new Set()); appendRef.current = false }, [folder])
 
   const load = useCallback(async () => {
     setLoading(true)
+    const wasAppend = appendRef.current
     try {
       const res = await mailboxApi.list({ folder, keyword: query, page, size: 20 })
-      setData(res)
-      onIds((res.content ?? []).map((m) => m.mailId))
-      setSelected(new Set())
-    } catch (e) { onError(e.message) } finally { setLoading(false) }
+      const content = wasAppend ? [...dataRef.current.content, ...(res.content ?? [])] : (res.content ?? [])
+      const merged = { ...res, content }
+      dataRef.current = merged
+      setData(merged)
+      onIds(content.map((m) => m.mailId))
+      if (!wasAppend) setSelected(new Set())
+      setSyncedAt(Date.now())
+    } catch (e) { onError(e.message) } finally { appendRef.current = false; setLoading(false) }
   }, [folder, query, page, onIds, onError])
   useEffect(() => { load() }, [load])
 
@@ -394,6 +420,8 @@ function MailList({ folder, folders, onOpen, onIds, onChanged, onError }) {
                     {m.hasAttachment && <span className="material-symbols-outlined mail-clip" aria-label="첨부">attach_file</span>}
                   </td>
                   <td className="mail-date">{fmt(m.sentAt)}</td>
+                  {/* 본문 미리보기 — 모바일 카드에서만 보인다(데스크톱 표에서는 CSS 로 숨김). */}
+                  <td className="mail-preview-cell">{m.preview}</td>
                 </tr>
               ))}
             </tbody>
@@ -401,15 +429,35 @@ function MailList({ folder, folders, onOpen, onIds, onChanged, onError }) {
         </div>
       )}
 
+      {/* 숫자 페이저 — 데스크톱용(모바일에서는 CSS 로 숨기고 아래 '더 보기'를 쓴다). */}
       {data.totalPages > 1 && (
         <div className="mail-pager">
-          <button disabled={page === 0} onClick={() => setPage(0)} aria-label="처음">&laquo;</button>
-          <button disabled={page === 0} onClick={() => setPage(page - 1)} aria-label="이전">&lsaquo;</button>
+          <button disabled={page === 0} onClick={() => { appendRef.current = false; setPage(0) }} aria-label="처음">&laquo;</button>
+          <button disabled={page === 0} onClick={() => { appendRef.current = false; setPage(page - 1) }} aria-label="이전">&lsaquo;</button>
           {pageWindow(page, data.totalPages).map((p) => (
-            <button key={p} className={p === page ? 'on' : ''} onClick={() => setPage(p)}>{p + 1}</button>
+            <button key={p} className={p === page ? 'on' : ''} onClick={() => { appendRef.current = false; setPage(p) }}>{p + 1}</button>
           ))}
-          <button disabled={page >= data.totalPages - 1} onClick={() => setPage(page + 1)} aria-label="다음">&rsaquo;</button>
-          <button disabled={page >= data.totalPages - 1} onClick={() => setPage(data.totalPages - 1)} aria-label="마지막">&raquo;</button>
+          <button disabled={page >= data.totalPages - 1} onClick={() => { appendRef.current = false; setPage(page + 1) }} aria-label="다음">&rsaquo;</button>
+          <button disabled={page >= data.totalPages - 1} onClick={() => { appendRef.current = false; setPage(data.totalPages - 1) }} aria-label="마지막">&raquo;</button>
+        </div>
+      )}
+
+      {/* 모바일용 '더 보기' 푸터 — 다음 20통을 아래에 이어 붙인다. (로드한 수 / 전체) */}
+      {rows.length > 0 && (
+        <div className="mail-loadmore">
+          {rows.length < data.totalElements ? (
+            <button
+              type="button"
+              className="mail-loadmore-btn"
+              disabled={loading}
+              onClick={() => { appendRef.current = true; setPage((p) => p + 1) }}
+            >
+              이전 메일 더 보기 <span className="mail-loadmore-n">({rows.length} / {data.totalElements})</span>
+            </button>
+          ) : (
+            <div className="mail-loadmore-end">모든 메일을 불러왔습니다 ({data.totalElements})</div>
+          )}
+          <p className="mail-sync-note">마지막 동기화: {syncAgo(syncedAt)}</p>
         </div>
       )}
     </>
