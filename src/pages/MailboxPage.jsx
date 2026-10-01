@@ -639,10 +639,12 @@ function MailHtml({ html }) {
     return () => { frame.removeEventListener('load', measure); timers.forEach(clearTimeout) }
   }, [html])
 
-  // sandbox="allow-same-origin": 스크립트는 여전히 차단(allow-scripts 없음)이라 안전하고,
-  //   부모가 내용 높이를 읽을 수 있어 본문 길이만큼 프레임을 늘릴 수 있다.
+  // sandbox:
+  //   allow-same-origin  — 부모가 내용 높이를 읽어 본문 길이만큼 프레임을 늘린다. (스크립트는 allow-scripts 가 없어 계속 차단)
+  //   allow-popups + allow-popups-to-escape-sandbox — 본문 링크(<base target="_blank">)를 새 탭에서 열 수 있게 한다.
+  //     이게 없으면 쿠팡 메일처럼 버튼·링크를 눌러도 아무 일도 안 일어난다. 새 탭은 샌드박스를 벗어나 정상 페이지로 뜬다.
   // scrolling="no": 프레임 내부는 스크롤하지 않고 내용 높이만큼 늘어난다 → 페이지가 쭉 스크롤된다.
-  return <iframe ref={ref} className="mail-body-frame" sandbox="allow-same-origin" title="메일 본문" scrolling="no" style={{ height }} />
+  return <iframe ref={ref} className="mail-body-frame" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" title="메일 본문" scrolling="no" style={{ height }} />
 }
 
 /**
