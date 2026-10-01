@@ -4333,12 +4333,20 @@ tr.drop-into td {
 /* 날짜는 잘리지 않게 — 한 줄 고정, 말줄임 없음. */
 .mail-table .mail-date { color: #94a3b8; text-align: right; white-space: nowrap; overflow: visible; text-overflow: clip; }
 /* 숫자 페이저(네이버식 « ‹ 1 2 3 › »). */
-.mail-pager { display: flex; justify-content: center; align-items: center; gap: 4px; margin-top: 16px; }
-.mail-pager button { min-width: 30px; height: 30px; padding: 0 7px; border: 0; background: transparent;
-  color: #64748b; font-family: inherit; font-size: 13px; font-weight: 600; border-radius: 8px; cursor: pointer; }
-.mail-pager button:hover:not(:disabled) { background: #f1f5f9; color: #0f172a; }
-.mail-pager button.on { background: var(--accent); color: #fff; }
-.mail-pager button:disabled { color: #cbd5e1; cursor: default; }
+.mail-pager { display: flex; justify-content: center; align-items: center; gap: 6px;
+  margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+.mail-pager button { min-width: 34px; height: 34px; padding: 0 9px; border: 1px solid transparent;
+  background: transparent; color: #64748b; font-family: inherit; font-size: 13px; font-weight: 600;
+  border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s, border-color .15s, box-shadow .15s, transform .1s; }
+.mail-pager button:hover:not(:disabled):not(.on) { background: #eef2f7; color: #0f172a; }
+.mail-pager button:active:not(:disabled) { transform: translateY(1px); }
+/* 화살표(처음·이전·다음·마지막)는 글자보다 조금 크게, 연한 테두리로 묶어 번호와 구분한다. */
+.mail-pager button[aria-label] { color: #94a3b8; font-size: 16px; border-color: var(--border); }
+.mail-pager button[aria-label]:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); background: transparent; }
+.mail-pager button.on { background: var(--accent); color: #fff; border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(47, 111, 235, .35); cursor: default; }
+.mail-pager button:disabled { color: #cbd5e1; border-color: transparent; cursor: default; }
 
 /* TO 배지 — 네이버식 초록 라벨(받는 사람에 내 주소가 있음). */
 .mail-to { display: inline-block; min-width: 20px; text-align: center; font-size: 10px; font-weight: 800;
