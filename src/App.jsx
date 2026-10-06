@@ -40,6 +40,7 @@ import AboutPage from './pages/company/AboutPage'
 import GreetingPage from './pages/company/GreetingPage'
 import OrgPage from './pages/company/OrgPage'
 import ConsultingPage from './pages/company/ConsultingPage'
+import PricingPage from './pages/company/PricingPage'
 import DesignPage from './pages/company/DesignPage'
 import NoticePage from './pages/company/NoticePage'
 import NoticeDetailPage from './pages/company/NoticeDetailPage'
@@ -116,6 +117,7 @@ export default function App() {
           <Route path="/company/greeting" element={<GreetingPage />} />
           <Route path="/company/org" element={<OrgPage />} />
           <Route path="/biz-area/consulting" element={<ConsultingPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
           <Route path="/design" element={<DesignPage />} />
           <Route path="/notice" element={<NoticePage />} />
           <Route path="/notice/:id" element={<NoticeDetailPage />} />

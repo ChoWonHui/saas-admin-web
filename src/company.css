@@ -1207,3 +1207,44 @@ a.kc-article-nav-item:hover .kc-article-nav-title { color: var(--kc-accent); }
 @media (max-width: 720px) {
   .kc-brand-values { grid-template-columns: repeat(2, 1fr); gap: 14px 16px; }
 }
+
+/* ===== 요금제(/pricing) ===== */
+.kc-pricing-lead { text-align: center; max-width: 60ch; margin: 0 auto clamp(36px, 4vw, 52px);
+  font-size: 17px; line-height: 1.8; color: var(--kc-text-2); }
+
+.kc-pricing { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; align-items: stretch; }
+
+.kc-plan { position: relative; display: flex; flex-direction: column;
+  background: var(--kc-surface); border: 1px solid var(--kc-line); border-radius: var(--kc-r);
+  padding: 38px 28px 30px; }
+.kc-plan.is-best { border: 2px solid var(--kc-accent); box-shadow: 0 18px 44px rgb(47 111 235 / 14%); }
+
+.kc-plan-badge { position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+  background: var(--kc-accent); color: #fff; font-size: 12px; font-weight: 800; letter-spacing: .1em;
+  padding: 5px 18px; border-radius: 999px; }
+
+.kc-plan-name { text-align: center; font-size: 23px; font-weight: 800; letter-spacing: .02em; color: var(--kc-text); }
+.kc-plan-price { text-align: center; margin: 8px 0 2px; color: var(--kc-accent); line-height: 1; }
+.kc-plan-price strong { font-size: 46px; font-weight: 800; letter-spacing: -.03em; }
+.kc-plan-price span { font-size: 18px; font-weight: 700; margin-left: 3px; }
+.kc-plan-tag { text-align: center; color: var(--kc-text-3); font-size: 14.5px;
+  padding-bottom: 22px; margin: 10px 0 22px; border-bottom: 1px solid var(--kc-line); }
+
+.kc-plan-feats { list-style: none; margin: 0 0 26px; padding: 0; flex: 1;
+  display: flex; flex-direction: column; gap: 13px; }
+.kc-plan-feats li { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--kc-text-2); }
+.kc-plan-feats .material-symbols-outlined { flex: none; font-size: 16px; color: var(--kc-accent);
+  background: var(--kc-accent-soft); border-radius: 50%; width: 22px; height: 22px;
+  display: grid; place-items: center; font-variation-settings: 'wght' 600; }
+
+.kc-plan-cta { width: 100%; }
+
+.kc-plan-notes { list-style: none; margin: clamp(32px, 4vw, 44px) 0 0; padding: 24px 26px;
+  background: var(--kc-bg); border-radius: var(--kc-r);
+  display: flex; flex-direction: column; gap: 8px; }
+.kc-plan-notes li { font-size: 14px; color: var(--kc-text-3); line-height: 1.6; }
+
+@media (max-width: 860px) {
+  .kc-pricing { grid-template-columns: 1fr; gap: 16px; }
+  .kc-plan.is-best { order: -1; }   /* 모바일에서는 추천 상품을 맨 위로 */
+}
