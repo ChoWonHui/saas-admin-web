@@ -718,6 +718,12 @@ input {
     display: flex;
   }
 
+  /* 모바일 내비 드로어는 position:fixed 로 화면 밖(translateX(-100%))에 숨어 있다.
+     그대로 두면 그 폭만큼 페이지에 가로 스크롤이 생겨 "본문이 헤더보다 넓게" 밀려 보인다.
+     루트에서 가로 넘침을 잘라 막는다(세로 스크롤은 유지). */
+  html { overflow-x: hidden; }
+  body { overflow-x: hidden; }
+
   .topbar {
     padding: 0 14px;
   }
