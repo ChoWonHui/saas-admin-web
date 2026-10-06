@@ -157,7 +157,7 @@ export default function MailboxPage() {
               <span className="material-symbols-outlined" style={{ fontSize: '18px', verticalAlign: 'middle', marginRight: '4px' }}>
                 {push === 'on' ? 'notifications_active' : 'notifications_off'}
               </span>
-              {push === 'on' ? '알림 끄기' : '알림 켜기'}
+              <span className="btn-label">{push === 'on' ? '알림 끄기' : '알림 켜기'}</span>
             </button>
           )}
           <button
@@ -170,7 +170,8 @@ export default function MailboxPage() {
               } catch (e) { setError(e.message) }
             }}
           >
-            새로고침
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', verticalAlign: 'middle', marginRight: '4px' }}>refresh</span>
+            <span className="btn-label">새로고침</span>
           </button>
         </div>
       </div>
