@@ -230,6 +230,11 @@ input {
 .noti-bell .material-symbols-outlined { font-size: 23px; }
 .noti-badge { position: absolute; top: 3px; right: 3px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px; background: #e5484d; color: #fff; font-size: 10px; font-weight: 800; display: grid; place-items: center; line-height: 1; box-shadow: 0 0 0 2px var(--surface); }
 .noti-panel { position: absolute; top: 48px; right: 0; width: 330px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 16px 48px rgba(17,20,28,.2); z-index: 3000; overflow: hidden; animation: noti-in .14s ease; }
+/* 모바일: 330px 고정폭이면 벨이 화면 오른쪽에 있어 패널 왼쪽이 화면 밖으로 잘린다.
+   화면 폭에 맞춰 양옆 여백만 두고 상단바 아래에 고정 배치한다. */
+@media (max-width: 640px) {
+  .noti-panel { position: fixed; top: 60px; left: 12px; right: 12px; width: auto; max-height: calc(100vh - 80px); overflow-y: auto; }
+}
 @keyframes noti-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 .noti-head { display: flex; align-items: center; gap: 8px; padding: 13px 16px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 14px; color: var(--text); }
 .noti-head-n { background: var(--accent); color: #fff; font-size: 11px; font-weight: 800; border-radius: 999px; padding: 1px 7px; }

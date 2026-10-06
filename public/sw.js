@@ -28,7 +28,13 @@ self.addEventListener('push', (event) => {
     icon: ICON,
     badge: ICON,
     tag: 'kc-new-mail',
+    renotify: true,
     data: { url: data.url || MAILBOX_URL },
+  }
+  // 홈 화면 앱 아이콘에 안 읽은 개수 배지를 표시(지원 브라우저). 값이 없으면 점만 표시.
+  const n = Number(data.badge)
+  if (self.navigator && 'setAppBadge' in self.navigator) {
+    self.navigator.setAppBadge(Number.isFinite(n) && n > 0 ? n : undefined).catch(() => {})
   }
   event.waitUntil(self.registration.showNotification(title, options))
 })

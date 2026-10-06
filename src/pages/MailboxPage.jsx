@@ -91,6 +91,15 @@ export default function MailboxPage() {
   // 진입 시 현재 푸시 상태를 읽어 버튼에 반영한다.
   useEffect(() => { pushState().then(setPush) }, [])
 
+  // 홈 화면 앱 아이콘 배지를 받은편지함 안 읽은 수로 맞춘다(지원 브라우저·설치형 PWA).
+  // 메일함을 보는 동안 수가 바뀌면 배지도 따라 바뀌고, 0이면 지운다.
+  useEffect(() => {
+    if (!('setAppBadge' in navigator)) return
+    const n = folders.find((f) => f.folder === 'INBOX')?.unread || 0
+    if (n > 0) navigator.setAppBadge(n).catch(() => {})
+    else navigator.clearAppBadge?.().catch(() => {})
+  }, [folders])
+
   // 알림 켜기/끄기 토글.
   const togglePush = async () => {
     if (push === 'busy') return
