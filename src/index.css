@@ -4520,7 +4520,10 @@ tr.drop-into td {
 
 /* ===== 메일 상세(참고안 카드 · 콘솔 토큰) ===== */
 .md-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
-.md-head { padding: 16px 18px; border-bottom: 1px solid #eef1f4; }
+/* display:block 을 명시한다. 다른 화면(모달 상세)의 .md-head 가 display:flex 라
+   같은 클래스명 때문에 여기까지 flex 가 먹어, 제목과 발신자가 가로로 나란히 붙고
+   제목이 좁은 칸에 짓눌려 세로로 한 글자씩 쪼개졌다. */
+.md-head { display: block; padding: 16px 18px; border-bottom: 1px solid #eef1f4; }
 .md-head-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .md-tags { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
 .md-tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
