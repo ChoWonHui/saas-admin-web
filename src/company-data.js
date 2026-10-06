@@ -589,3 +589,51 @@ export const PRICING = {
     '기능 및 제작 범위에 따라 견적이 달라질 수 있습니다.',
   ],
 }
+
+/**
+ * 월 유지보수 요금제(/pricing 하단 섹션). 제작(PRICING)과 별개로 운영·관리 상품을 둔다.
+ * PREMIUM 은 금액 대신 '별도 문의'(priceText)로 표시한다.
+ */
+export const MAINTENANCE = {
+  lead: '홈페이지 운영에 필요한 유지관리 범위를 한눈에',
+  plans: [
+    {
+      key: 'm-start',
+      name: 'START',
+      pricePrefix: '월',
+      price: '19,900',
+      unit: '원',
+      tagline: '서버 업로드·게시판 제공, 수정 불가한 기본 운영 플랜',
+      features: ['서버 업로드 / 게시', '도메인 연결 지원', '수정 불가'],
+    },
+    {
+      key: 'm-business',
+      name: 'BUSINESS',
+      pricePrefix: '월',
+      price: '49,900',
+      unit: '원',
+      best: true,
+      tagline: '실무에 필요한 관리까지 포함된 가장 인기 있는 플랜',
+      features: ['START 포함', '간단 수정 월 2회', '접속 오류 / 장애 대응', '보안 및 업데이트 점검', '이메일 문의 지원'],
+    },
+    {
+      key: 'm-premium',
+      name: 'PREMIUM',
+      priceText: '별도 문의',
+      tagline: '맞춤형 관리로 더욱 안정적이고 전문적인 운영 지원',
+      features: ['BUSINESS 포함', '우선 대응', '수정 범위 확대', '콘텐츠 관리 지원', '맞춤 운영 관리'],
+    },
+  ],
+  // 유지관리 범위 예시(아이콘 칩).
+  scope: [
+    { icon: 'dns', label: '호스팅' },
+    { icon: 'verified_user', label: 'SSL' },
+    { icon: 'edit_note', label: '간단수정' },
+    { icon: 'support_agent', label: '장애대응' },
+  ],
+  notes: [
+    '모든 요금은 부가세 포함 금액입니다.',
+    '자체 서버, 호스팅, 도메인, SSL 인증서 교체는 무료로 지원합니다.',
+    '외부 유료 서비스 및 신규 기능 개발은 별도 견적이 필요합니다.',
+  ],
+}

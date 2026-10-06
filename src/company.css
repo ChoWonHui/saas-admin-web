@@ -1248,3 +1248,21 @@ a.kc-article-nav-item:hover .kc-article-nav-title { color: var(--kc-accent); }
   .kc-pricing { grid-template-columns: 1fr; gap: 16px; }
   .kc-plan.is-best { order: -1; }   /* 모바일에서는 추천 상품을 맨 위로 */
 }
+
+/* 요금제 가격 변형: '월' 접두어, '별도 문의' 텍스트 */
+.kc-plan-price-pre { font-size: 20px; font-weight: 700; margin-right: 3px; vertical-align: baseline; }
+.kc-plan-price-text { font-size: 32px; font-weight: 800; letter-spacing: -.02em; }
+
+/* 유지관리 범위 예시(아이콘 칩 줄) */
+.kc-scope { margin-top: clamp(26px, 3.2vw, 38px); display: flex; align-items: center; flex-wrap: wrap;
+  gap: 14px 20px; padding: 18px 22px; background: var(--kc-surface);
+  border: 1px solid var(--kc-line); border-radius: var(--kc-r); }
+.kc-scope-title { background: var(--kc-accent-soft); color: var(--kc-accent);
+  padding: 8px 16px; border-radius: 999px; font-size: 14px; font-weight: 800; white-space: nowrap; }
+.kc-scope-list { list-style: none; display: flex; flex-wrap: wrap; gap: 12px 22px; margin: 0; padding: 0; }
+.kc-scope-list li { display: flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 600; color: var(--kc-text-2); }
+.kc-scope-list .material-symbols-outlined { color: var(--kc-accent); font-size: 20px; }
+
+@media (max-width: 560px) {
+  .kc-scope { flex-direction: column; align-items: flex-start; }
+}
