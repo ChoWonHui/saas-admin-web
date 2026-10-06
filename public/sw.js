@@ -9,7 +9,11 @@
  *    푸시만 다루고 네트워크는 건드리지 않는다.
  */
 
-const ICON = 'https://d2ziky4ycezd5d.cloudfront.net/saas-admin/brand/kanchenjunga/app-icon-192.png'
+// 알림에 뜨는 KANCHENJUNGA 산 아이콘. 같은 출처(앱에 포함)로 둬서 로딩 실패 없이 확실히 뜨게 한다.
+//   ICON  : 알림 큰 아이콘(컬러)
+//   BADGE : 안드로이드 상태바 작은 배지(흰 실루엣·투명)
+const ICON = '/brand/noti-icon-192.png'
+const BADGE = '/brand/noti-badge-96.png'
 const MAILBOX_URL = '/console/9f7a3d81/mailbox'
 
 self.addEventListener('install', () => self.skipWaiting())
@@ -26,7 +30,7 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || '',
     icon: ICON,
-    badge: ICON,
+    badge: BADGE,
     tag: 'kc-new-mail',
     renotify: true,
     data: { url: data.url || MAILBOX_URL },
