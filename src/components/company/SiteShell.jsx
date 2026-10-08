@@ -428,9 +428,9 @@ function SiteFooter() {
                 <a href="/console/9f7a3d81/login">관리자</a>
               </li>
             </ul>
+            <FootSns />
           </div>
         </div>
-        <FootSns />
         <div className="kc-foot-bar">© {new Date().getFullYear()} {BRAND.name}. ALL RIGHTS RESERVED.</div>
       </div>
     </footer>
@@ -480,8 +480,10 @@ function FootSns() {
   ].filter((i) => i.url)
   if (items.length === 0) return null
   return (
-    <div className="kc-foot-sns-row">
-      {items.map((i) => (
+    <div className="kc-foot-sns-block">
+      <h5>SNS</h5>
+      <div className="kc-foot-sns-row">
+        {items.map((i) => (
         <a
           key={i.key}
           className={`kc-foot-sns ${i.cls}`}
@@ -492,7 +494,8 @@ function FootSns() {
         >
           {i.icon}
         </a>
-      ))}
+        ))}
+      </div>
     </div>
   )
 }

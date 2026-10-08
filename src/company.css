@@ -1025,11 +1025,13 @@ html:has(.kc) { scroll-behavior: smooth; }
 .kc-foot p { margin-top: 12px !important; font-size: 14px; line-height: 1.8; }
 .kc-foot-links { margin-top: 16px !important; display: grid; gap: 10px; font-size: 14px; }
 .kc-foot-links a:hover { color: #7dabff; }
+.kc-foot-sns-block { margin-top: 22px; }
+.kc-foot-sns-block > h5 { margin-bottom: 12px; }
 .kc-foot-sns-row {
-  margin-top: 40px; display: flex; justify-content: center; align-items: center; gap: 14px;
+  display: flex; align-items: center; gap: 10px;
 }
 .kc-foot-sns {
-  display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
+  display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px;
   border-radius: 50%; color: #fff; transition: transform .15s, box-shadow .15s, filter .15s;
 }
 .kc-foot-sns:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgb(0 0 0 / 28%); filter: brightness(1.06); }
