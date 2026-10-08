@@ -1027,8 +1027,15 @@ html:has(.kc) { scroll-behavior: smooth; }
 .kc-foot-links a:hover { color: #7dabff; }
 .kc-foot-bar {
   margin-top: 44px; padding-top: 22px; border-top: 1px solid rgb(255 255 255 / 10%);
-  font-size: 12.5px; text-align: center; color: rgb(226 235 250 / 45%);
+  font-size: 12.5px; color: rgb(226 235 250 / 45%);
+  display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
 }
+.kc-foot-sns {
+  display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
+  border-radius: 50%; color: rgb(226 235 250 / 70%); border: 1px solid rgb(255 255 255 / 14%);
+  transition: color .15s, border-color .15s, background .15s;
+}
+.kc-foot-sns:hover { color: #fff; border-color: rgb(255 255 255 / 40%); background: rgb(255 255 255 / 8%); }
 
 /* ===== 태블릿 ===== */
 
