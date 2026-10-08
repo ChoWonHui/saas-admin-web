@@ -430,18 +430,8 @@ function SiteFooter() {
             </ul>
           </div>
         </div>
-        <div className="kc-foot-bar">
-          <span>© {new Date().getFullYear()} {BRAND.name}. ALL RIGHTS RESERVED.</span>
-          <a
-            className="kc-foot-sns"
-            href={CONTACT.instagram}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="KANCHENJUNGA 인스타그램"
-          >
-            <InstagramIcon />
-          </a>
-        </div>
+        <FootSns />
+        <div className="kc-foot-bar">© {new Date().getFullYear()} {BRAND.name}. ALL RIGHTS RESERVED.</div>
       </div>
     </footer>
   )
@@ -476,11 +466,64 @@ export function SecHead({ title, desc, center = false }) {
   )
 }
 
-/** 인스타그램 글리프(아이콘 폰트에 브랜드 로고가 없어 인라인 SVG 로 둔다). */
+
+/**
+ * 푸터 SNS 아이콘 줄. CONTACT.sns 에 값이 있는 채널만 컬러 아이콘으로 띄운다.
+ * 가운데 모아 두어 "구석에 몰린" 느낌을 없앤다. 블로그·유튜브 URL 이 생기면 자동으로 함께 뜬다.
+ */
+function FootSns() {
+  const sns = CONTACT.sns || {}
+  const items = [
+    { key: 'instagram', url: sns.instagram, label: '인스타그램', cls: 'kc-sns-insta', icon: <InstagramIcon /> },
+    { key: 'blog', url: sns.blog, label: '네이버 블로그', cls: 'kc-sns-blog', icon: <BlogIcon /> },
+    { key: 'youtube', url: sns.youtube, label: '유튜브', cls: 'kc-sns-youtube', icon: <YoutubeIcon /> },
+  ].filter((i) => i.url)
+  if (items.length === 0) return null
+  return (
+    <div className="kc-foot-sns-row">
+      {items.map((i) => (
+        <a
+          key={i.key}
+          className={`kc-foot-sns ${i.cls}`}
+          href={i.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`KANCHENJUNGA ${i.label}`}
+        >
+          {i.icon}
+        </a>
+      ))}
+    </div>
+  )
+}
+
+/** 인스타그램 글리프(브랜드 그라데이션). */
 function InstagramIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
       <path d="M12 2.2c3.2 0 3.6 0 4.85.07 1.17.05 1.8.25 2.23.42.56.22.96.48 1.38.9.42.42.68.82.9 1.38.17.42.37 1.05.42 2.23.06 1.27.07 1.65.07 4.85s0 3.58-.07 4.85c-.05 1.17-.25 1.8-.42 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.17-1.06.37-2.23.42-1.27.06-1.65.07-4.85.07s-3.58 0-4.85-.07c-1.17-.05-1.8-.25-2.23-.42a3.7 3.7 0 0 1-1.38-.9 3.7 3.7 0 0 1-.9-1.38c-.17-.42-.37-1.06-.42-2.23C2.21 15.58 2.2 15.2 2.2 12s0-3.58.07-4.85c.05-1.17.25-1.8.42-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.17 1.05-.37 2.23-.42C8.42 2.21 8.8 2.2 12 2.2Zm0 1.98c-3.14 0-3.52.01-4.76.07-.9.04-1.38.19-1.7.32-.43.16-.74.36-1.06.68-.32.32-.52.63-.68 1.06-.13.32-.28.8-.32 1.7-.06 1.24-.07 1.62-.07 4.76s0 3.52.07 4.76c.04.9.19 1.38.32 1.7.16.43.36.74.68 1.06.32.32.63.52 1.06.68.32.13.8.28 1.7.32 1.24.06 1.62.07 4.76.07s3.52-.01 4.76-.07c.9-.04 1.38-.19 1.7-.32.43-.16.74-.36 1.06-.68.32-.32.52-.63.68-1.06.13-.32.28-.8.32-1.7.06-1.24.07-1.62.07-4.76s0-3.52-.07-4.76c-.04-.9-.19-1.38-.32-1.7a2.85 2.85 0 0 0-.68-1.06 2.85 2.85 0 0 0-1.06-.68c-.32-.13-.8-.28-1.7-.32-1.24-.06-1.62-.07-4.76-.07Zm0 3.37a5.05 5.05 0 1 1 0 10.1 5.05 5.05 0 0 1 0-10.1Zm0 1.98a3.07 3.07 0 1 0 0 6.14 3.07 3.07 0 0 0 0-6.14Zm5.27-3.49a1.18 1.18 0 1 1 0 2.36 1.18 1.18 0 0 1 0-2.36Z" />
+    </svg>
+  )
+}
+
+/** 네이버 블로그 글리프(흰 'blog' 심볼). */
+function BlogIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <rect x="2.5" y="4.5" width="19" height="15" rx="4.5" fill="currentColor" />
+      <path d="M8.3 8.6c1.1 0 1.9.8 1.9 2s-.8 2-1.9 2H7v2H5.6V8.6H8.3Zm-.1 2.7c.4 0 .6-.3.6-.7s-.2-.7-.6-.7H7v1.4h1.2Z" fill="#fff" />
+      <circle cx="13.1" cy="13.3" r="1.4" fill="#fff" />
+      <path d="M16.2 9.2h1.4v5.4h-1.4z" fill="#fff" />
+      <path d="M12 8.9c.9 0 1.5.4 1.5.4l-.5 1s-.4-.2-.8-.2c-.5 0-.8.3-.8.9v.6h-1.3v-.7c0-1.2.8-2 1.9-2Z" fill="#fff" />
+    </svg>
+  )
+}
+
+/** 유튜브 글리프(둥근 사각 + 재생 삼각). 색은 CSS 로 빨강 배경을 준다. */
+function YoutubeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <path d="M9.8 9.3v5.4l4.7-2.7-4.7-2.7Z" fill="#fff" />
     </svg>
   )
 }

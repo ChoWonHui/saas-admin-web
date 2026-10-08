@@ -95,8 +95,12 @@ export const CONTACT = {
   bizNo: '515-31-02197',
   // 대표자 성명. GREETING.name 과 같은 사람이지만, 푸터는 인사말 없이도 떠야 하므로 여기 둔다.
   ceo: '조성호',
-  // SNS. 푸터 하단 아이콘 링크에 쓴다.
-  instagram: 'https://www.instagram.com/kanchenjunga_official_/',
+  // SNS 링크. 푸터에 아이콘으로 묶어 보여준다. URL 이 생기면 blog·youtube 를 채우면 아이콘이 함께 뜬다.
+  sns: {
+    instagram: 'https://www.instagram.com/kanchenjunga_official_/',
+    blog: '',
+    youtube: '',
+  },
 }
 
 /* ===== 메인(/) ===== */

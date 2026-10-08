@@ -1025,17 +1025,22 @@ html:has(.kc) { scroll-behavior: smooth; }
 .kc-foot p { margin-top: 12px !important; font-size: 14px; line-height: 1.8; }
 .kc-foot-links { margin-top: 16px !important; display: grid; gap: 10px; font-size: 14px; }
 .kc-foot-links a:hover { color: #7dabff; }
-.kc-foot-bar {
-  margin-top: 44px; padding-top: 22px; border-top: 1px solid rgb(255 255 255 / 10%);
-  font-size: 12.5px; color: rgb(226 235 250 / 45%);
-  display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+.kc-foot-sns-row {
+  margin-top: 40px; display: flex; justify-content: center; align-items: center; gap: 14px;
 }
 .kc-foot-sns {
-  display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
-  border-radius: 50%; color: rgb(226 235 250 / 70%); border: 1px solid rgb(255 255 255 / 14%);
-  transition: color .15s, border-color .15s, background .15s;
+  display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
+  border-radius: 50%; color: #fff; transition: transform .15s, box-shadow .15s, filter .15s;
 }
-.kc-foot-sns:hover { color: #fff; border-color: rgb(255 255 255 / 40%); background: rgb(255 255 255 / 8%); }
+.kc-foot-sns:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgb(0 0 0 / 28%); filter: brightness(1.06); }
+/* 채널별 브랜드 컬러 배경 */
+.kc-sns-insta { background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%); }
+.kc-sns-blog { background: #03c75a; }
+.kc-sns-youtube { background: #ff0000; }
+.kc-foot-bar {
+  margin-top: 18px; padding-top: 22px; border-top: 1px solid rgb(255 255 255 / 10%);
+  font-size: 12.5px; text-align: center; color: rgb(226 235 250 / 45%);
+}
 
 /* ===== 태블릿 ===== */
 
