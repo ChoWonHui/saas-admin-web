@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import '../../company.css'
 import { BRAND, NAV, NAV_EXPRISM, NAV_FLAT, CONTACT } from '../../company-data'
+import ChatBot from './ChatBot'
 
 /**
  * 회사 사이트의 공통 껍데기 — 상단바 + 내비게이션 + 푸터.
@@ -21,6 +22,7 @@ export default function SiteShell({ children, solidHeader = false, title }) {
       <SiteHeader solid={solidHeader} />
       <main>{children}</main>
       <SiteFooter />
+      <ChatBot />
     </div>
   )
 }

@@ -643,3 +643,56 @@ export const MAINTENANCE = {
     '외부 유료 서비스 및 신규 기능 개발은 별도 견적이 필요합니다.',
   ],
 }
+
+/**
+ * 규칙 기반 챗봇(회사 사이트 우하단). AI 가 아니라 정해진 질문·답변·버튼으로 안내한다.
+ * - 문구·질문을 여기서만 고치면 화면이 따라온다(코드 수정 불필요).
+ * - answer 안의 [링크]는 actions 로 버튼이 되어 요금제·문의·전화 등으로 연결한다.
+ * - follow: 이 답 뒤에 이어서 보여줄 다른 질문 key 목록.
+ */
+export const CHATBOT = {
+  greeting: '안녕하세요! KANCHENJUNGA 입니다 👋\n무엇을 도와드릴까요? 아래에서 궁금한 항목을 골라주세요.',
+  // 첫 화면에 보여줄 질문들(순서대로).
+  menu: ['price_build', 'price_maintain', 'period', 'what_exprism', 'how_contact', 'company_info'],
+  items: {
+    price_build: {
+      q: '홈페이지 제작 비용이 궁금해요',
+      a: '제작 상품은 3가지입니다.\n\n• START 39만원 — 원페이지, 처음 시작용\n• BUSINESS 99만원 — 최대 15페이지, 가장 인기\n• CUSTOM 300만원~ — 예약/주문/결제 등 맞춤\n\n자세한 구성은 요금제 페이지에서 확인하실 수 있어요.',
+      actions: [{ label: '요금제 자세히 보기', to: '/pricing' }, { label: '문의하기', to: '/contact' }],
+      follow: ['price_maintain', 'period'],
+    },
+    price_maintain: {
+      q: '월 유지보수 비용은요?',
+      a: '유지보수(월 요금)는 3가지입니다.\n\n• START 월 19,900원 — 서버·게시 기본 운영\n• BUSINESS 월 49,900원 — 간단 수정·장애 대응 포함(가장 인기)\n• PREMIUM 별도 문의 — 맞춤 관리\n\n도메인·호스팅·SSL 교체는 무료로 지원해드려요.',
+      actions: [{ label: '요금제 자세히 보기', to: '/pricing' }, { label: '문의하기', to: '/contact' }],
+      follow: ['price_build', 'how_contact'],
+    },
+    period: {
+      q: '제작 기간과 수정 횟수는 어떻게 되나요?',
+      a: '상품과 범위에 따라 다르지만, 보통 2~4주 내 오픈을 목표로 진행합니다.\n수정은 START 1회, BUSINESS 2회가 기본 제공되고, 그 이후 수정은 협의 후 진행됩니다.\n정확한 일정은 문의 주시면 상황에 맞춰 안내해드려요.',
+      actions: [{ label: '문의하기', to: '/contact' }],
+      follow: ['price_build', 'how_contact'],
+    },
+    what_exprism: {
+      q: 'EXPRISM이 무엇인가요?',
+      a: 'EXPRISM 은 저희가 직접 만들어 운영하는 외식 매장용 솔루션입니다.\n손님이 테이블 QR 로 주문하고, 사장님이 자리·매출을 한 화면에서 봅니다.\n앱 설치도 회원가입도 없어요.',
+      actions: [{ label: 'EXPRISM 소개 보기', to: '/exprism' }],
+      follow: ['price_build', 'how_contact'],
+    },
+    how_contact: {
+      q: '문의는 어떻게 하나요?',
+      a: '편하신 방법으로 연락 주세요.\n\n• 전화: 02-6013-1717\n• 이메일: contact@kanchenjunga.co.kr\n• 홈페이지 문의폼\n\n문의폼으로 남겨주시면 담당자가 확인 후 연락드립니다.',
+      actions: [
+        { label: '문의폼 작성', to: '/contact' },
+        { label: '전화 걸기', href: 'tel:0260131717' },
+      ],
+      follow: ['price_build', 'company_info'],
+    },
+    company_info: {
+      q: '회사 정보가 궁금해요',
+      a: 'KANCHENJUNGA 는 홈페이지 제작과 IT 솔루션을 제공하는 기술 파트너입니다.\n\n• 주소: 서울특별시 마포구 월드컵북로 50길 6-10\n• 대표: 조성호\n• 대표전화: 02-6013-1717',
+      actions: [{ label: '회사소개 보기', to: '/company' }, { label: 'SNS(인스타그램)', href: 'https://www.instagram.com/kanchenjunga_official_/' }],
+      follow: ['what_exprism', 'how_contact'],
+    },
+  },
+}
