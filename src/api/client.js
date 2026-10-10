@@ -468,6 +468,7 @@ export const mailboxApi = {
   saveDraft: (body) => api('/api/platform-admin/mailbox/drafts', { method: 'POST', body }),
   // 주기 동기화(60초)를 기다리지 않고 즉시 확인. 가져온 통수를 돌려준다.
   syncNow: () => api('/api/platform-admin/mailbox/sync', { method: 'POST' }),
+  readAll: () => api('/api/platform-admin/mailbox/read-all', { method: 'PATCH' }),
 
   // 발송은 첨부가 붙어 멀티파트다 — JSON 헬퍼를 쓰지 않고 직접 보낸다.
   async send({ to, cc, bcc, subject, content, draftId, files = [] }) {

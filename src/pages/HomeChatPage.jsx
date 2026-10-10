@@ -98,7 +98,7 @@ export default function HomeChatPage() {
       {loading ? (
         <Loading label="대화를 불러오는 중…" />
       ) : (
-        <div className="hc-layout">
+        <div className={`hc-layout${activeId != null ? ' show-thread' : ''}`}>
           <aside className="hc-list">
             {convs.length === 0 && <div className="hc-empty" style={{ height: 120 }}>들어온 상담이 없습니다.</div>}
             {convs.map((c) => (
@@ -126,6 +126,10 @@ export default function HomeChatPage() {
             {active ? (
               <>
                 <header className="hc-thread-head">
+                  {/* 모바일: 목록으로 돌아가기 */}
+                  <button type="button" className="hc-back" onClick={() => setActiveId(null)} aria-label="목록으로">
+                    <span className="material-symbols-outlined">arrow_back</span>
+                  </button>
                   <div className="hc-conv-avatar">{(active.visitorName || '?').trim().charAt(0)}</div>
                   <div>
                     <strong>{active.visitorName}</strong>

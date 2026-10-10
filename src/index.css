@@ -236,8 +236,11 @@ input {
   .noti-panel { position: fixed; top: 60px; left: 12px; right: 12px; width: auto; max-height: calc(100vh - 80px); overflow-y: auto; }
 }
 @keyframes noti-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-.noti-head { display: flex; align-items: center; gap: 8px; padding: 13px 16px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 14px; color: var(--text); }
+.noti-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 13px 16px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 14px; color: var(--text); }
+.noti-head-r { display: inline-flex; align-items: center; gap: 8px; }
 .noti-head-n { background: var(--accent); color: #fff; font-size: 11px; font-weight: 800; border-radius: 999px; padding: 1px 7px; }
+.noti-readall { border: 0; background: transparent; color: var(--accent); font-size: 12px; font-weight: 700; cursor: pointer; padding: 2px 4px; }
+.noti-readall:hover { text-decoration: underline; }
 .noti-empty { padding: 30px 16px; text-align: center; color: var(--muted); font-size: 13px; }
 .noti-list { list-style: none; margin: 0; padding: 6px; max-height: 360px; overflow-y: auto; }
 .noti-item { display: flex; gap: 11px; align-items: center; width: 100%; text-align: left; padding: 10px; border: 0; background: transparent; border-radius: 10px; cursor: pointer; }
@@ -4734,13 +4737,20 @@ tr.drop-into td {
 
 .hc-empty { display: grid; place-items: center; height: 100%; color: #94a3b8; font-size: 14px; }
 
-@media (max-width: 720px) {
-  .hc-layout { grid-template-columns: 1fr; height: auto; }
-  .hc-list { max-height: 240px; }
-  .hc-thread-wrap { height: 70vh; }
-}
-
 /* iOS 확대 방지 — 채팅 답변 입력창 글자를 모바일에서 16px 로. */
 @media (max-width: 768px) {
   .hc-reply input { font-size: 16px; }
+}
+
+/* 채팅 상담 모바일 — 목록 먼저, 대화 선택 시 스레드로 전환 */
+.hc-back { display: none; border: 0; background: transparent; cursor: pointer; color: var(--text); padding: 4px; margin-right: 2px; }
+.hc-back .material-symbols-outlined { font-size: 22px; vertical-align: middle; }
+@media (max-width: 720px) {
+  .hc-layout { grid-template-columns: 1fr; height: auto; }
+  .hc-list { max-height: none; height: 70vh; }
+  .hc-thread-wrap { display: none; }        /* 기본: 목록만 보인다 */
+  .hc-back { display: inline-grid; place-items: center; }
+  /* 대화를 고르면 목록을 숨기고 스레드를 보인다 */
+  .hc-layout.show-thread .hc-list { display: none; }
+  .hc-layout.show-thread .hc-thread-wrap { display: flex; height: 72vh; }
 }

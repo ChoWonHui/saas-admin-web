@@ -2,25 +2,25 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminPath } from '../adminBase'
 import Icon from './Icon'
-import { inquiryApi, mailboxApi, tokenStore } from '../api/client'
+import { inquiryApi, mailboxApi, chatApi, tokenStore } from '../api/client'
 
 const fmt = (dt) => (dt ? dt.slice(5, 16).replace('T', ' ').replace('-', '.') : '')
 
 /**
  * 관리자 콘솔 상단 알림 벨.
- *   - 업체 문의(답변 대기) — 폴링 + 웹소켓
- *   - 새 메일 도착 — 웹소켓(NEW_MAIL). 자기 사번으로 온 메일만 온다. 진입 시 안 읽은 메일로 시드한다.
- * 업체가 문의를 남기거나 새 메일이 오면 벨이 흔들리고 배지에 합산해 보여준다.
+ *   - 업체 문의(답변 대기) · 새 메일(NEW_MAIL) · 새 채팅(NEW_CHAT) 을 한곳에 모아 보여준다.
+ *   - 항목을 누르면 해당 메뉴로 바로 이동한다(하단 바로가기 버튼은 두지 않는다).
+ *   - '모두 읽음' 으로 벨의 알림을 한 번에 비운다.
  */
 export default function AdminNotiBell() {
-  const [items, setItems] = useState([]) // 답변 대기 문의
-  const [mails, setMails] = useState([]) // 안 읽은/새로 도착한 메일
+  const [items, setItems] = useState([])  // 답변 대기 문의
+  const [mails, setMails] = useState([])  // 안 읽은/새로 도착한 메일
+  const [chats, setChats] = useState([])  // 안 읽은 채팅 대화
   const [open, setOpen] = useState(false)
-  const [ring, setRing] = useState(false) // 실시간 도착 시 벨 흔들기
+  const [ring, setRing] = useState(false)
   const wrapRef = useRef(null)
   const navigate = useNavigate()
 
-  // 실시간: 웹소켓으로 새 문의/새 메일 알림을 받는다. 끊기면 자동 재연결, 60초 폴링을 안전망으로 둔다.
   useEffect(() => {
     let alive = true
     let ws = null
@@ -30,14 +30,20 @@ export default function AdminNotiBell() {
       try { const list = await inquiryApi.tenantConvs(); if (alive) setItems((list || []).filter((c) => c.needsReply)) }
       catch { /* 무시 */ }
     }
-    // 진입 시 안 읽은 받은메일을 벨에 시드한다(접속 전에 온 것도 보이게).
     const seedMails = async () => {
       try {
         const page = await mailboxApi.list({ folder: 'INBOX', size: 20 })
         if (!alive) return
-        const unread = (page?.content || []).filter((m) => m.unread)
-          .map((m) => ({ mailId: m.mailId, subject: m.subject, from: m.fromName || m.fromAddress, at: m.sentAt }))
-        setMails(unread)
+        setMails((page?.content || []).filter((m) => m.unread)
+          .map((m) => ({ mailId: m.mailId, subject: m.subject, from: m.fromName || m.fromAddress, at: m.sentAt })))
+      } catch { /* 무시 */ }
+    }
+    const seedChats = async () => {
+      try {
+        const list = await chatApi.conversations()
+        if (!alive) return
+        setChats((list || []).filter((c) => c.unreadForAdmin > 0)
+          .map((c) => ({ id: c.id, name: c.visitorName, last: c.lastMessage, at: c.lastMessageAt })))
       } catch { /* 무시 */ }
     }
     const bell = () => { setRing(true); setTimeout(() => { if (alive) setRing(false) }, 1400) }
@@ -53,10 +59,14 @@ export default function AdminNotiBell() {
         let msg = null
         try { msg = JSON.parse(e.data) } catch { /* 옛 서버는 빈 신호만 보낸다 */ }
         if (msg && msg.type === 'NEW_MAIL') {
-          // 새 메일 도착 — 목록 맨 앞에 추가(같은 메일 중복 제거).
           setMails((prev) => {
             const item = { mailId: msg.mailId, subject: msg.subject, from: msg.fromName, at: new Date().toISOString() }
             return [item, ...prev.filter((m) => m.mailId !== msg.mailId)].slice(0, 20)
+          })
+        } else if (msg && msg.type === 'NEW_CHAT') {
+          setChats((prev) => {
+            const item = { id: msg.conversationId, name: msg.visitorName, last: msg.text, at: new Date().toISOString() }
+            return [item, ...prev.filter((c) => c.id !== msg.conversationId)].slice(0, 20)
           })
         } else {
           refetchConvs()
@@ -69,8 +79,9 @@ export default function AdminNotiBell() {
 
     refetchConvs()
     seedMails()
+    seedChats()
     connect()
-    const poll = setInterval(refetchConvs, 60000)
+    const poll = setInterval(() => { refetchConvs(); seedChats() }, 60000)
     return () => {
       alive = false
       clearInterval(poll)
@@ -86,15 +97,15 @@ export default function AdminNotiBell() {
     return () => document.removeEventListener('mousedown', onDoc)
   }, [open])
 
+  // 항목 클릭 → 해당 메뉴로 자동 이동 + 벨에서 내린다.
+  const goMail = (mailId) => { setOpen(false); setMails((p) => p.filter((m) => m.mailId !== mailId)); navigate(adminPath('/mailbox')) }
   const goTenant = (tenantId) => { setOpen(false); navigate(`${adminPath('/inquiries')}?tenant=${tenantId}`) }
-  const goAll = () => { setOpen(false); navigate(adminPath('/inquiries')) }
-  const goMail = (mailId) => {
-    setOpen(false)
-    setMails((prev) => prev.filter((m) => m.mailId !== mailId)) // 확인한 건 벨에서 내린다
-    navigate(adminPath('/mailbox'))
-  }
+  const goChat = (id) => { setOpen(false); setChats((p) => p.filter((c) => c.id !== id)); navigate(adminPath('/home-chat')) }
 
-  const count = items.length + mails.length
+  // 전체 읽음 — 벨의 알림을 모두 비운다.
+  const readAll = () => { setMails([]); setChats([]); setItems([]) }
+
+  const count = items.length + mails.length + chats.length
   return (
     <div className="noti-wrap" ref={wrapRef}>
       <button type="button" className={`noti-bell${open ? ' on' : ''}${ring ? ' ring' : ''}`} onClick={() => setOpen((o) => !o)} aria-label={`알림 ${count}건`}>
@@ -105,12 +116,26 @@ export default function AdminNotiBell() {
         <div className="noti-panel">
           <div className="noti-head">
             <span>알림</span>
-            {count > 0 && <span className="noti-head-n">{count}</span>}
+            <span className="noti-head-r">
+              {count > 0 && <span className="noti-head-n">{count}</span>}
+              {count > 0 && <button type="button" className="noti-readall" onClick={readAll}>모두 읽음</button>}
+            </span>
           </div>
           {count === 0 ? (
             <div className="noti-empty">새 알림이 없습니다.</div>
           ) : (
             <ul className="noti-list">
+              {chats.slice(0, 8).map((c) => (
+                <li key={`chat-${c.id}`}>
+                  <button type="button" className="noti-item" onClick={() => goChat(c.id)}>
+                    <span className="noti-item-ic"><Icon name="forum" /></span>
+                    <span className="noti-item-txt">
+                      <span className="noti-item-title">{c.name || '방문자'} · 채팅</span>
+                      <span className="noti-item-sub">{c.last || '새 메시지'} · {fmt(c.at)}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
               {mails.slice(0, 8).map((m) => (
                 <li key={`mail-${m.mailId}`}>
                   <button type="button" className="noti-item" onClick={() => goMail(m.mailId)}>
@@ -135,8 +160,6 @@ export default function AdminNotiBell() {
               ))}
             </ul>
           )}
-          {mails.length > 0 && <button type="button" className="noti-all" onClick={() => { setOpen(false); navigate(adminPath('/mailbox')) }}>메일함 열기</button>}
-          <button type="button" className="noti-all" onClick={goAll}>문의 관리 전체 보기</button>
         </div>
       )}
     </div>

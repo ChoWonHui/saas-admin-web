@@ -173,6 +173,19 @@ export default function MailboxPage() {
             className="btn-ghost btn-sm"
             onClick={async () => {
               try {
+                await mailboxApi.readAll()
+                setNotice('받은편지함을 모두 읽음 처리했습니다.')
+                loadFolders(); setDetail(null)
+              } catch (e) { setError(e.message) }
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', verticalAlign: 'middle', marginRight: '4px' }}>mark_email_read</span>
+            <span className="btn-label">전체 읽음</span>
+          </button>
+          <button
+            className="btn-ghost btn-sm"
+            onClick={async () => {
+              try {
                 const n = await mailboxApi.syncNow()
                 setNotice(n > 0 ? `새 메일 ${n}통을 가져왔습니다.` : '새 메일이 없습니다.')
                 loadFolders()
