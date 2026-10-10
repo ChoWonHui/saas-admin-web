@@ -52,7 +52,7 @@ export const NAV = [
       { to: '/biz-area/consulting', label: 'IT 컨설팅' },
       // 자사 솔루션. 같은 화면이 exprism.co.kr 루트에도 있지만, 회사 사이트를 보던 사람을
       // 다른 도메인으로 내보내면 흐름이 끊겨 이 도메인 안에서 연다.
-      { to: '/exprism', label: 'EXPRISM' },
+      { to: 'https://www.exprism.co.kr/', label: 'EXPRISM' },
     ],
   },
   { to: '/pricing', label: '요금제' },

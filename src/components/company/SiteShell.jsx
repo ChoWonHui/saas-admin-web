@@ -318,7 +318,8 @@ function SiteHeader({ solid }) {
  */
 function NavChild({ to, label }) {
   if (/^https?:\/\//i.test(to)) {
-    return <a href={to}>{label}</a>
+    // 다른 도메인(예: exprism.co.kr)은 새 탭으로 연다.
+    return <a href={to} target="_blank" rel="noopener noreferrer">{label}</a>
   }
   return (
     <NavLink to={to} end className={({ isActive }) => (isActive ? 'on' : '')}>
@@ -414,7 +415,9 @@ function SiteFooter() {
             <ul className="kc-foot-links">
               {NAV_FLAT.map((n) => (
                 <li key={n.to}>
-                  <Link to={n.to}>{n.label}</Link>
+                  {/^https?:\/\//i.test(n.to)
+                    ? <a href={n.to} target="_blank" rel="noopener noreferrer">{n.label}</a>
+                    : <Link to={n.to}>{n.label}</Link>}
                 </li>
               ))}
             </ul>
