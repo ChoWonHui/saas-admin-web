@@ -294,6 +294,7 @@ function CodeDialog({ dialog, onClose, onSaved, onError }) {
     useYn: code?.useYn ?? 'Y',
     remark: code?.remark ?? '',
     remark2: code?.remark2 ?? '',
+    nameEn: code?.nameEn ?? '',
   })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -368,6 +369,7 @@ function CodeDialog({ dialog, onClose, onSaved, onError }) {
           sortOrder: form.sortOrder === '' ? undefined : Number(form.sortOrder),
           remark: form.remark || undefined,
           remark2: form.remark2 || undefined,
+          nameEn: form.nameEn || undefined,
         })
       } else {
         await codeApi.updateCode(code.id, {
@@ -376,6 +378,7 @@ function CodeDialog({ dialog, onClose, onSaved, onError }) {
           useYn: form.useYn,
           remark: form.remark || undefined,
           remark2: form.remark2 || undefined,
+          nameEn: form.nameEn || undefined,
         })
       }
       await onSaved(keepGroup)
@@ -472,6 +475,15 @@ function CodeDialog({ dialog, onClose, onSaved, onError }) {
 
         {!mode.includes('Group') && (
           <>
+            <label className="field">
+              <span>영문명 (선택 · 다국어 화면 표기용)</span>
+              <input
+                value={form.nameEn}
+                onChange={(e) => setForm({ ...form, nameEn: e.target.value })}
+                maxLength={255}
+                placeholder="예: Shinhan Bank"
+              />
+            </label>
             <label className="field">
               <span>비고 (선택 · 자유 메모/부가값)</span>
               <input
