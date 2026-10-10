@@ -76,6 +76,15 @@ export const i18nApi = {
 // 받는 주소를 여기서 보내지 않는다. 서버가 공통코드(KCJG_CONTACT_EMAIL)에 등록된 주소로만
 // 알림을 보낸다 — 프런트가 수신자를 정할 수 있으면 그 순간 스팸 중계기가 된다.
 // (옛 /api-proxy/home/send-email 은 kanchenjunga-nodejs 시절 경로다. 지금 nginx 에 그 위치가 없다)
+// 홈페이지 채팅 상담(방문자, 무인증). 대화 시작 시 받은 token 을 이후 요청에 넘긴다.
+export const chatPublicApi = {
+  start: (name) => request('/public/chat/conversations', { method: 'POST', body: { name } }),
+  send: (id, token, text) =>
+    request(`/public/chat/conversations/${id}/messages?${new URLSearchParams({ token })}`, { method: 'POST', body: { text } }),
+  messages: (id, token, afterId) =>
+    request(`/public/chat/conversations/${id}/messages?${new URLSearchParams(afterId ? { token, afterId } : { token })}`),
+}
+
 export const homeInquiryApi = {
   create: (payload) => request('/public/home-inquiries', { method: 'POST', body: payload }),
 }

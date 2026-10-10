@@ -1370,3 +1370,10 @@ a.kc-article-nav-item:hover .kc-article-nav-title { color: var(--kc-accent); }
 .kc-chatpage-input input { flex: 1; min-width: 0; padding: 12px 14px; border: 1px solid var(--kc-line); border-radius: var(--kc-r-s); font-family: inherit; font-size: 14px; }
 .kc-chatpage-input input:focus { outline: none; border-color: var(--kc-accent); }
 .kc-chatpage-input .kc-btn { flex: none; height: auto; padding: 0 20px; }
+
+/* 채팅 화면 추가 요소 */
+.kc-chatpage-head { position: relative; }
+.kc-chatpage-end { margin-left: auto; border: 1px solid rgb(255 255 255 / 45%); background: transparent; color: #fff; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 999px; cursor: pointer; }
+.kc-chatpage-end:hover { background: rgb(255 255 255 / 15%); }
+.kc-chatpage-err { color: #dc2626; font-size: 13px; margin: 4px 0 0; }
+.kc-chatpage-alt { color: var(--kc-text-3); font-size: 12.5px; }
