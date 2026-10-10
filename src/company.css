@@ -1329,6 +1329,8 @@ a.kc-article-nav-item:hover .kc-article-nav-title { color: var(--kc-accent); }
 .kc-chat-action:hover { background: var(--kc-accent); color: #fff; }
 
 .kc-chat-choices { padding: 12px; border-top: 1px solid var(--kc-line); background: var(--kc-surface); display: flex; flex-direction: column; gap: 7px; max-height: 200px; overflow-y: auto; }
+/* 선택지를 본문 흐름 안에 둔 버전 — 전체가 함께 스크롤되어 목록이 더 있는지 보인다. */
+.kc-chat-choices-inline { display: flex; flex-direction: column; gap: 7px; margin-top: 4px; }
 .kc-chat-choice {
   text-align: left; padding: 10px 13px; border: 1px solid var(--kc-line); border-radius: 10px;
   background: var(--kc-surface-2); color: var(--kc-text); font-size: 13px; font-weight: 500; cursor: pointer;
@@ -1383,3 +1385,18 @@ a.kc-article-nav-item:hover .kc-article-nav-title { color: var(--kc-accent); }
   background: var(--kc-accent); color: #fff; border-color: var(--kc-accent); font-weight: 700; }
 .kc-chat-live:hover { background: var(--kc-accent-strong); border-color: var(--kc-accent-strong); color: #fff; }
 .kc-chat-live .material-symbols-outlined { font-size: 18px; }
+
+/* 챗봇 실시간 모드 */
+.kc-chat-back { border: 0; background: transparent; color: #fff; cursor: pointer; display: grid; place-items: center; padding: 2px; margin-right: 2px; border-radius: 8px; }
+.kc-chat-back:hover { background: rgb(255 255 255 / 15%); }
+.kc-chat-back .material-symbols-outlined { font-size: 20px; }
+.kc-chat-msg .kc-chat-time { display: block; font-size: 10px; color: var(--kc-text-3); margin-top: 4px; }
+.kc-chat-msg.me .kc-chat-time { color: rgb(255 255 255 / 75%); }
+.kc-chat-input { display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--kc-line); background: var(--kc-surface); }
+.kc-chat-input input { flex: 1; min-width: 0; padding: 10px 13px; border: 1px solid var(--kc-line); border-radius: 999px; font-family: inherit; font-size: 13.5px; }
+.kc-chat-input input:focus { outline: none; border-color: var(--kc-accent); }
+.kc-chat-send { flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--kc-accent); color: #fff; cursor: pointer; display: grid; place-items: center; }
+.kc-chat-send:hover:not(:disabled) { background: var(--kc-accent-strong); }
+.kc-chat-send:disabled { opacity: .5; cursor: default; }
+.kc-chat-send .material-symbols-outlined { font-size: 20px; }
+.kc-chat-liveerr { align-self: center; font-size: 12px; color: #dc2626; }
