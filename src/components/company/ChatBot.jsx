@@ -94,6 +94,15 @@ export default function ChatBot() {
           </div>
 
           <div className="kc-chat-choices">
+            {/* 실시간 상담(채팅하기) — FAQ 로 안 풀리는 건 상담원에게 바로 연결. */}
+            <button
+              type="button"
+              className="kc-chat-choice kc-chat-live"
+              onClick={() => { setOpen(false); navigate('/home-chat') }}
+            >
+              <span className="material-symbols-outlined">forum</span>
+              상담원과 채팅하기
+            </button>
             {choices.map((key) => (
               <button key={key} type="button" className="kc-chat-choice" onClick={() => ask(key)}>
                 {CHATBOT.items[key]?.q}

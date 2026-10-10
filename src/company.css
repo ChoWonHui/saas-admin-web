@@ -1377,3 +1377,9 @@ a.kc-article-nav-item:hover .kc-article-nav-title { color: var(--kc-accent); }
 .kc-chatpage-end:hover { background: rgb(255 255 255 / 15%); }
 .kc-chatpage-err { color: #dc2626; font-size: 13px; margin: 4px 0 0; }
 .kc-chatpage-alt { color: var(--kc-text-3); font-size: 12.5px; }
+
+/* 챗봇 '상담원과 채팅하기' 버튼(강조) */
+.kc-chat-live { display: flex; align-items: center; justify-content: center; gap: 7px;
+  background: var(--kc-accent); color: #fff; border-color: var(--kc-accent); font-weight: 700; }
+.kc-chat-live:hover { background: var(--kc-accent-strong); border-color: var(--kc-accent-strong); color: #fff; }
+.kc-chat-live .material-symbols-outlined { font-size: 18px; }
