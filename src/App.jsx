@@ -20,6 +20,7 @@ import PermissionsPage from './pages/PermissionsPage'
 import TenantsPage from './pages/TenantsPage'
 import InquiriesPage from './pages/InquiriesPage'
 import HomeInquiriesPage from './pages/HomeInquiriesPage'
+import HomeChatPage from './pages/HomeChatPage'
 import HomeNoticesPage from './pages/HomeNoticesPage'
 import MailboxPage from './pages/MailboxPage'
 import TenantNoticesPage from './pages/TenantNoticesPage'
@@ -41,6 +42,7 @@ import GreetingPage from './pages/company/GreetingPage'
 import OrgPage from './pages/company/OrgPage'
 import ConsultingPage from './pages/company/ConsultingPage'
 import PricingPage from './pages/company/PricingPage'
+import CompanyHomeChatPage from './pages/company/HomeChatPage'
 import DesignPage from './pages/company/DesignPage'
 import NoticePage from './pages/company/NoticePage'
 import NoticeDetailPage from './pages/company/NoticeDetailPage'
@@ -118,6 +120,8 @@ export default function App() {
           <Route path="/company/org" element={<OrgPage />} />
           <Route path="/biz-area/consulting" element={<ConsultingPage />} />
           <Route path="/pricing" element={<PricingPage />} />
+          {/* 홈페이지 채팅 문의 화면. 메뉴에는 별도로 붙인다(지금은 라우트만). */}
+          <Route path="/home-chat" element={<CompanyHomeChatPage />} />
           <Route path="/design" element={<DesignPage />} />
           <Route path="/notice" element={<NoticePage />} />
           <Route path="/notice/:id" element={<NoticeDetailPage />} />
@@ -219,6 +223,8 @@ export default function App() {
             <Route path="inquiries" element={<RequireAuth><InquiriesPage /></RequireAuth>} />
             {/* 홈페이지 문의(회사 사이트 /contact 접수분). 위 inquiries(업체 1:1)와 다른 게시판이다. */}
             <Route path="home-inquiries" element={<RequireAuth><HomeInquiriesPage /></RequireAuth>} />
+            {/* 홈페이지 채팅 상담 — 회사 사이트 /home-chat 으로 들어온 실시간 상담에 답변한다. (메뉴는 별도로 붙인다) */}
+            <Route path="home-chat" element={<RequireAuth><HomeChatPage /></RequireAuth>} />
             {/* 회사 사이트(/notice)에 공개되는 공지. 사내 공지(notices)·업체 공지와 대상이 다르다. */}
             <Route path="home-notices" element={<RequireAuth><HomeNoticesPage /></RequireAuth>} />
             {/* 관리자 메일함. 받은 메일은 백엔드가 메일 서버에서 IMAP 으로 가져온다. */}

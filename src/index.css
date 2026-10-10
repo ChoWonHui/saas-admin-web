@@ -4696,3 +4696,46 @@ tr.drop-into td {
 
 /* 공통코드 비고 셀 — 긴 URL 이 표를 너무 넓히지 않게 잘라서 보여준다(전체는 title 툴팁). */
 .code-remark { max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
+
+/* ===== 홈페이지 채팅 상담(관리자 /home-chat) ===== */
+.hc-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; height: calc(100vh - 220px); min-height: 440px; }
+
+.hc-list { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); overflow-y: auto; }
+.hc-conv { position: relative; width: 100%; display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 0; border-bottom: 1px solid #f1f5f9; background: transparent; cursor: pointer; text-align: left; }
+.hc-conv:hover { background: #f8fafc; }
+.hc-conv.on { background: #eff6ff; }
+.hc-conv-avatar { flex: none; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, var(--accent), #6366f1); color: #fff; font-weight: 700; font-size: 15px; }
+.hc-conv-meta { min-width: 0; flex: 1; }
+.hc-conv-top { display: flex; justify-content: space-between; gap: 6px; }
+.hc-conv-name { font-size: 13.5px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hc-conv-time { flex: none; font-size: 11px; color: #94a3b8; }
+.hc-conv-last { font-size: 12px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.hc-conv-badge { flex: none; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #e5484d; color: #fff; font-size: 11px; font-weight: 800; display: grid; place-items: center; }
+.hc-conv-closed { flex: none; font-size: 10px; font-weight: 700; color: #94a3b8; background: #f1f5f9; border-radius: 4px; padding: 2px 5px; }
+
+.hc-thread-wrap { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); overflow: hidden; }
+.hc-thread-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #eef1f4; }
+.hc-thread-head strong { display: block; font-size: 14px; color: #0f172a; }
+.hc-thread-sub { font-size: 11.5px; color: #64748b; }
+
+.hc-thread { flex: 1; overflow-y: auto; padding: 18px; background: var(--bg); display: flex; flex-direction: column; gap: 12px; }
+.hc-msg { display: flex; flex-direction: column; max-width: 72%; }
+.hc-msg.guest { align-self: flex-start; align-items: flex-start; }
+.hc-msg.admin { align-self: flex-end; align-items: flex-end; }
+.hc-msg-bubble { padding: 10px 13px; border-radius: 14px; font-size: 13.5px; line-height: 1.6; white-space: pre-line; word-break: break-word; }
+.hc-msg.guest .hc-msg-bubble { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 5px; }
+.hc-msg.admin .hc-msg-bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 5px; }
+.hc-msg-time { font-size: 10.5px; color: #94a3b8; margin-top: 3px; }
+
+.hc-reply { display: flex; gap: 8px; padding: 12px; border-top: 1px solid #eef1f4; background: var(--surface); }
+.hc-reply input { flex: 1; min-width: 0; padding: 10px 13px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 13.5px; }
+.hc-reply input:focus { outline: none; border-color: var(--accent); }
+.hc-reply .btn-primary { flex: none; }
+
+.hc-empty { display: grid; place-items: center; height: 100%; color: #94a3b8; font-size: 14px; }
+
+@media (max-width: 720px) {
+  .hc-layout { grid-template-columns: 1fr; height: auto; }
+  .hc-list { max-height: 240px; }
+  .hc-thread-wrap { height: 70vh; }
+}
