@@ -4739,3 +4739,8 @@ tr.drop-into td {
   .hc-list { max-height: 240px; }
   .hc-thread-wrap { height: 70vh; }
 }
+
+/* iOS 확대 방지 — 채팅 답변 입력창 글자를 모바일에서 16px 로. */
+@media (max-width: 768px) {
+  .hc-reply input { font-size: 16px; }
+}

@@ -1400,3 +1400,10 @@ a.kc-article-nav-item:hover .kc-article-nav-title { color: var(--kc-accent); }
 .kc-chat-send:disabled { opacity: .5; cursor: default; }
 .kc-chat-send .material-symbols-outlined { font-size: 20px; }
 .kc-chat-liveerr { align-self: center; font-size: 12px; color: #dc2626; }
+
+/* iOS 는 글자 16px 미만 입력창을 탭하면 화면을 확대한다. 모바일에서 채팅 입력창 글자를 16px 로 올려 막는다. */
+@media (max-width: 768px) {
+  .kc-chat-input input,
+  .kc-chatpage-input input,
+  .kc-chatpage-start input { font-size: 16px; }
+}
