@@ -514,15 +514,11 @@ function InstagramIcon() {
   )
 }
 
-/** 네이버 블로그 글리프(흰 'blog' 심볼). */
+/** 네이버 블로그 심볼(흰 b). 배경 그린(#03c75a)은 .kc-sns-blog 가 준다. */
 function BlogIcon() {
   return (
     <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-      <rect x="2.5" y="4.5" width="19" height="15" rx="4.5" fill="currentColor" />
-      <path d="M8.3 8.6c1.1 0 1.9.8 1.9 2s-.8 2-1.9 2H7v2H5.6V8.6H8.3Zm-.1 2.7c.4 0 .6-.3.6-.7s-.2-.7-.6-.7H7v1.4h1.2Z" fill="#fff" />
-      <circle cx="13.1" cy="13.3" r="1.4" fill="#fff" />
-      <path d="M16.2 9.2h1.4v5.4h-1.4z" fill="#fff" />
-      <path d="M12 8.9c.9 0 1.5.4 1.5.4l-.5 1s-.4-.2-.8-.2c-.5 0-.8.3-.8.9v.6h-1.3v-.7c0-1.2.8-2 1.9-2Z" fill="#fff" />
+      <path d="M10.9 6.5c3.2 0 5.3 2 5.3 5s-2.3 5.1-5.6 5.1c-.9 0-1.7-.2-2.4-.6l-.2.5H6V6.5h2.1v3.3c.7-.5 1.6-.8 2.8-.8Zm-.3 8.3c1.7 0 2.9-1.3 2.9-3.2s-1.1-3.1-2.8-3.1-2.8 1.3-2.8 3.2 1.1 3.1 2.7 3.1Z" fill="#fff"/>
     </svg>
   )
 }

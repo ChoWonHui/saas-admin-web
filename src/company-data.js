@@ -98,7 +98,7 @@ export const CONTACT = {
   // SNS 링크. 푸터에 아이콘으로 묶어 보여준다. URL 이 생기면 blog·youtube 를 채우면 아이콘이 함께 뜬다.
   sns: {
     instagram: 'https://www.instagram.com/kanchenjunga_official_/',
-    blog: '',
+    blog: 'https://blog.naver.com/it_kanchenjunga',
     youtube: '',
   },
 }
